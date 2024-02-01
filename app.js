@@ -7,12 +7,11 @@ const https = require('https');
 const express = require('express');
 var path = require('path');
 const app = express();
-
+const SocketManager = require('./SocketManager'); // Import the SocketManager class
 var sessions = require('client-sessions');
-
-
 var validation = require('express-validator');
 var cors = require('cors');
+
 
 //enables cors
 app.use(cors({
@@ -71,111 +70,6 @@ httpServer.listen(8081, () => {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //set up socket events
 
-
-
-function rint(min, max) {
-	min = Math.ceil(min);
-	max = Math.floor(max);
-	return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-//--------------------------------------------------------------------
-
-var io = require('socket.io')(httpServer, {});
-//io.set('origins', '*:*');
-var PLAYER_LIST = {};
-
-
-
-//================================================================
-
-io.sockets.on('connection', function (socket) {
-	zz.p('new socket connection');
-	var localplayer = '';
-
-	//================================================================
-
-	socket.on('disconnect', function () {
-
-
-		delete PLAYER_LIST[localplayer];
-		io.sockets.emit('removeplayer', localplayer);
-		console.log(PLAYER_LIST);
-
-	});
-
-
-
-
-
-	//================================================================
-
-	socket.on('keys', function (data) {
-
-
-
-
-		if (PLAYER_LIST[localplayer] != undefined) {
-
-			PLAYER_LIST[localplayer] = data;
-			console.log('===========================\n');
-			console.log(PLAYER_LIST);
-
-
-		} else {
-
-			console.log('this player must reconnect');
-			//socket.emit('login','YOU MUST LOGIN');
-
-		}
-
-	});
-
-
-	//================================================================
-
-	socket.on('sendchattoserver', function (data) {
-
-		console.log(data);
-		io.sockets.emit('addtochat', data);
-
-	});
-
-	//================================================================
-
-	socket.on('signIn', function (data) {
-
-		var user = PLAYER_LIST[data];
-
-		if (user) {
-
-			socket.emit('signInResponse', 'THIS USER EXISTS<BR>PICK ANOTHER NAME');
-
-
-		} else {
-			socket.emit('signInResponse', 'CREATING USER');
-			PLAYER_LIST[data] = [0, 0, 200, 0, 200, 0];
-			localplayer = data;
-		}
-
-		console.log(PLAYER_LIST);
-
-	});
-
-});
-
-
-
-//================================================================
-
-
-setInterval(function () {
-
-	io.sockets.emit('locations', PLAYER_LIST);
-
-
-
-}, 1000 / 60);
-
-
+const io = require('socket.io')(httpServer);
+const socketManager = new SocketManager(io); // Create an instance
 

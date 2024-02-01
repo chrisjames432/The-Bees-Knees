@@ -103,21 +103,10 @@ game.animate = function () {
 
 
 game.renderscene = function () {
-
-
   game.renderer.render(game.scene, game.camera);
-
-
 }
 
-
-
-//-----------------------------------------------------------------------------------------------
-
-
-
 //-------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 
 function createGrassyGround(width, length, widthSegments, lengthSegments) {
@@ -156,7 +145,16 @@ game.scene.add(ground);
 
 function positionCamera(camera, mesh, distanceX,distanceY,distanceZ) {
   camera.position.set(mesh.position.x + distanceX, mesh.position.y+distanceY , mesh.position.z + distanceZ);
-  camera.lookAt(mesh.position);
+
+  // Create a Vector3 to represent the offset
+var offset = new THREE.Vector3(0,1, 0); // Adjust the values as needed
+
+// Clone the current position of the mesh
+var newPosition = mesh.position.clone();
+
+// Add the offset to the cloned position
+newPosition.add(offset);
+  camera.lookAt(newPosition);
 }
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -195,10 +193,6 @@ game.playerControl = function (forward, turn) {
       game.player.move = { forward, turn };
   }
 };
-
-
-
-
 
 
 game.movePlayer = function (dt) {
@@ -261,7 +255,7 @@ function loadglb(){
      var e =5;
      model.scale.set(e, e, e)
      game.scene.add(gltf.scene);
-     positionCamera(game.camera,gltf.scene,1.5,15.5,8);
+     positionCamera(game.camera,gltf.scene,1.5,1.5,3);
     game.player=bee;
 
 
@@ -282,7 +276,7 @@ function loadglb(){
 
 
 
-    $('#loading_div').delay(1000).fadeOut(400);
+    $('#loading_div').delay(400).fadeOut(400);
 
 
 

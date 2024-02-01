@@ -88,7 +88,7 @@ zz.save = function(dir, obj){
 //--------------------------------------------------------------------------------------------
 
 
-zz.load = function(dir){ return JSON.parse(fs.readFileSync('client/coindb/'+dir+'.json', 'utf8') ); };
+zz.load = function(dir){ return JSON.parse(fs.readFileSync('client/'+dir+'.json', 'utf8') ); };
 
 //--------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
@@ -142,10 +142,6 @@ zz.loadapi = function(url,dothis){
 var starttime = zz.gettimestamp();
 zz.datafeed = {starttime:starttime,data:{}};
 zz.request = request;
-
-
-
-
 
 
 

@@ -17,6 +17,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap" rel="stylesheet">
+
+
+<script src="/socket.io/socket.io.js"></script>
+
 </head>
 
 
@@ -37,13 +42,83 @@
   </div>
 <!-- Write your comments here ---------------------------------------------------------------------------------------->
 
-<button id="camera-btn"><i class="fas fa-camera"></i></button>
+
     <div id="mainscene" class="scene">
 
 
     </div>
 
 
+    <style>
+        .container-fluid{
+
+            max-width: 90%;;
+        }
+
+
+        #textarea{
+
+            font-family: 'Poppins', sans-serif;
+            max-width: 60%;
+        }
+
+        .center-text {
+    text-align: center;
+}
+
+
+
+  /* Add custom CSS for styling */
+  .hero-section {
+   
+      
+      text-align: center;
+      padding: 100px 0;
+    }
+
+    .hero-title {
+      font-size: 5rem;
+      margin-bottom: 50px;
+    }
+
+    .hero-text {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+    }
+
+    .start-button {
+      background-color: #ff6f61; /* Customize the button color */
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 50px;;
+      transition: background-color 0.3s ease;
+    }
+
+    .start-button:hover {
+      background-color: #e65348; /* Change button color on hover */
+    }
+    </style>
+
+
+
+    <div id="title-screen" class="overlay">
+        <section class="hero-section">
+            <div class="container">
+              <h1 class="hero-title">The Bees Knees</h1>
+              <br><br>
+              <a id = 'startbutton' href="#" class="start-button mb-5">Start Now</a>
+              <br><br>
+              <center>
+              <p id = 'textarea' class="hero-text border mt-5">Some short and fun text goes here to describe your awesome content.</p>
+             </center>
+            </div>
+          </section>
+        
+    </div>   
 <!-- Write your comments here ---------------------------------------------------------------------------------------->
 
 
@@ -63,6 +138,41 @@
            window.game = game;
 
            
+
+
+
+  // Connect to the Socket.io server
+  var socket = io();
+  var textarea = document.getElementById('textarea');
+  var startbutton = document.getElementById('startbutton');
+  
+  
+  
+    textarea.innerHTML=''
+// Listen for a custom event from the server
+    socket.on('message', function (data) {
+        var textNode = document.createTextNode(data);
+
+        // Append the text node to the textarea element
+        textarea.appendChild(textNode);
+        
+    });
+
+
+
+
+    startbutton.addEventListener('click',function(){
+
+        console.log('buttonclicked')
+       var titlescreen = document.getElementById('title-screen');
+       titlescreen.style.display = 'none';
+
+
+    })
+// Send data to the server
+//socket.emit('message', 'Hello, Server!');
+
+
 
         });
 
