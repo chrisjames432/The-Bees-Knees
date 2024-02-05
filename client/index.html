@@ -129,49 +129,91 @@
 
 
         import { game } from './client/js/game.js';
-
+        import { Player } from './client/js/player.js';
         $(function () {
 
 
-           game.init();
-           game.animate();
-           window.game = game;
+        game.init();
+        window.game = game;
 
-           
+    
+        var textarea = document.getElementById('textarea');
+        var startbutton = document.getElementById('startbutton');
+         textarea.innerHTML=''
+
+
+        var playername = ''
+
+        game.socket.on('message', function (data) {
+          console.log(data)
+            var textNode = document.createTextNode(data.playername);
+            textarea.appendChild(textNode);
+            playername=data.playername
+            
+        });
 
 
 
-  // Connect to the Socket.io server
-  var socket = io();
-  var textarea = document.getElementById('textarea');
-  var startbutton = document.getElementById('startbutton');
+
+
+
+
+
+
+          startbutton.addEventListener('click',function(){
+
+              console.log('buttonclicked')
+            var titlescreen = document.getElementById('title-screen');
+            titlescreen.style.display = 'none';
+          
+
+
+            game.socket.on('playerlist',function(data){
+
+              //console.log(playername)
+            delete data[playername]
+        //   console.log(data);
+
   
-  
-  
-    textarea.innerHTML=''
-// Listen for a custom event from the server
-    socket.on('message', function (data) {
-        var textNode = document.createTextNode(data);
+game.otherplayers={}
+// Check if the data object is not empty
+if (Object.keys(data).length > 0) {
+    for (let key in data) {
+        if (data.hasOwnProperty(key)) {
+      //      console.log("Player ID:", key);
 
-        // Append the text node to the textarea element
-        textarea.appendChild(textNode);
-        
-    });
+            
+            // Assuming 'players' is an object containing your current players
+            if (game.otherplayers[key]) {
+                // Player exists, update position and rotation
+               // game.otherplayers[key].updateposition(data[key].position);
+               // players[key].updateRotation(data[key].rotation);
+                // Ensure 'updatePosition' and 'updateRotation' methods are implemented
+            } else {
+                // Player does not exist, create a new one
+                game.otherplayers[key] = new Player(game,game.socket)
+                game.otherplayers[key] = game.otherplayers[key].createOtherPlayer(data[key].position, data[key].rotation);
+                // 'createNewPlayer' is a hypothetical function to instantiate a new player
+            }
+        }
+    }
+} else {
+    console.log("No player data to process");
+}
+
+//////////////////////////////////////////
 
 
 
 
-    startbutton.addEventListener('click',function(){
-
-        console.log('buttonclicked')
-       var titlescreen = document.getElementById('title-screen');
-       titlescreen.style.display = 'none';
 
 
-    })
-// Send data to the server
-//socket.emit('message', 'Hello, Server!');
+            })
 
+
+
+
+          })
 
 
         });

@@ -50,19 +50,13 @@ app.get('/', function (req, res) {
 });
 
 
-
-
-
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 const httpServer = http.createServer(app);
 
 httpServer.listen(8081, () => {
 	console.log('HTTP Server running on port 8081');
 });
-
-
 
 
 

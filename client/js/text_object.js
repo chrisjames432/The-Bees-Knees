@@ -1,7 +1,7 @@
 
-import * as THREE from '../three/build/three.module.js';
+import * as THREE from './three/build/three.module.js';
 
-import { game } from '../game.js';
+import { game } from './game.js';
 
 
 

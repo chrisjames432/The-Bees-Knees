@@ -3,10 +3,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-import * as THREE from '../three/build/three.module.js';
-import { AnimationMixer } from '../three/src/animation/AnimationMixer.js';
-import { GLTFLoader } from '../three/examples/jsm/loaders/GLTFLoader.js';
-import { game } from '../game.js';
+import * as THREE from './three/build/three.module.js';
+import { AnimationMixer } from './three/src/animation/AnimationMixer.js';
+import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
+import { game } from './game.js';
 
 
 export function make_character() {

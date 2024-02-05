@@ -1,6 +1,6 @@
 console.log("surface_gui.js loaded")
-import { game } from '../game.js';
-import * as THREE from '../three/build/three.module.js';
+import { game } from './game.js';
+import * as THREE from './three/build/three.module.js';
 
 
 
