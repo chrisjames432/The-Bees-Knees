@@ -5,13 +5,29 @@ import * as THREE from './three/build/three.module.js';
 import { TWEEN } from './three/examples/jsm/libs/tween.module.min.js';
 import { Player } from './player.js';
 import { JoyStick } from './joystick.js'; 
-//var THREE = THREE
+import * as flowers from './flowers.js'; 
+import { otherplayer } from './otherplayers.js';  
+import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
+
+
+
+
+function setcam(camera, distanceX, distanceY, distanceZ) {
+  camera.position.set(5 + distanceX, 5 + distanceY, 5 + distanceZ);
+
+  var offset = new THREE.Vector3(0, 1, 0);
+  var newPosition = camera.position.clone();
+  newPosition.add(offset);
+  camera.lookAt(offset);
+};
+
 var game = {};
 game.socket = io();
-game.player = new Player(game,game.socket)
+//game.player = new Player(game,game.socket)
 game.three = THREE;
-game.camdistance = {x:1.5, y:20, z:25}
 game.animations = {};
+game.o1 = ''
+game.o2 = ''
 
 //-----------------------------------------------------------------------------------------------
 
@@ -29,11 +45,7 @@ game.init = function () {
   game.renderer.outputEncoding = THREE.sRGBEncoding;
   game.renderer.setPixelRatio(window.devicePixelRatio);
   game.scene.background = new THREE.Color(0xe0e0e0);;
-  
-
   document.getElementById('mainscene').appendChild(game.renderer.domElement);
-
-  
   
   // lights
 
@@ -45,30 +57,41 @@ game.init = function () {
   light.position.set(0, 20, 10);
   game.scene.add(light);
 
-
   var grid = new THREE.GridHelper(200, 20, 0x000000, 0x000000);
   grid.material.opacity = 0.5;
   grid.material.transparent = true;
-  game.scene.add(grid);
+ // game.scene.add(grid);
 
   var axesHelper = new THREE.AxesHelper(5);
   game.scene.add(axesHelper);
-
-
   
-  game.player.createPlayer() // Create an instance of the Player
+  //game.player.createPlayer() // Create an instance of the Player
   console.log(game.player)
-  game.joystick = new JoyStick({
-      onMove: game.player.playerControl.bind(game.player),// game.player.playerControl, // Bind the playerControl function to the player instance
-      game: game
-  });
-
-//game.player.sendPlayerData();
-
+  //game.joystick = new JoyStick({ onMove: game.player.playerControl.bind(game.player), game: game  });
 
 
   makegrass();
+  //flowers.makeflowers(game,1000,5);
 
+
+function makeother(name,x, gltf){
+  let Opos = new THREE.Vector3(x,5,5);
+  let Orot = new THREE.Euler(0,0,0); 
+  var other1 = new otherplayer(game,name)
+  other1.createOtherPlayer(Opos,Orot);
+  return other1
+}
+
+
+
+  
+game.o1 = makeother('p1',0, )
+game.o2 = makeother('p2',-5, )
+ 
+  
+  
+  $('#loading_div').delay(200).fadeOut(300);
+ setcam(game.camera,5,5,5)
   game.renderscene();
 
 
@@ -95,7 +118,10 @@ game.animate = function () {
     
   }
   TWEEN.update(); // Update all active tweens
-  game.dt = game.clock.getDelta() ;
+  var dt = game.clock.getDelta() ;
+
+  game.o1.update(dt*2)
+  game.o2.update(dt*3.4)
 
  
     game.renderscene();
@@ -135,8 +161,8 @@ function createGrassyGround(width, length, widthSegments, lengthSegments) {
 
 function makegrass(){
 // Usage example:
-const width = 200; // Set the width of the ground
-const length = 200; // Set the length of the ground
+const width = 500; // Set the width of the ground
+const length = 500; // Set the length of the ground
 const widthSegments = 200; // Set the number of width segments
 const lengthSegments = 200; // Set the number of length segments
 const ground = createGrassyGround(width, length, widthSegments, lengthSegments);

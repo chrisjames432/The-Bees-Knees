@@ -17,6 +17,7 @@ function Player(game,socket) {
     this.rotation = new THREE.Euler(); 
     this.bee=""
     this.socket = socket
+    this.camdistance = {x:1.5, y:5, z:10}
 }
 
 Player.prototype.movePlayer = function (dt) {
@@ -45,12 +46,8 @@ Player.prototype.movePlayer = function (dt) {
 };
 
 
-
-
 Player.prototype.playerControl = function (forward, turn) {
-    
-    //console.log('Player Control - Forward:', forward);
-    //console.log('Player Control - Turn:', turn);
+
     if (forward < 0) {
         turn = -turn;
         //this.move = { forward, turn };
@@ -77,7 +74,7 @@ Player.prototype.playerControl = function (forward, turn) {
 
 Player.prototype.tweencam = function () {
     const currentCameraPosition = this.game.camera.position.clone();
-    const distance = this.game.camdistance;
+    const distance = this.camdistance;
     const targetCameraPosition = new THREE.Vector3(
         this.bee.position.x + distance.x,
         this.bee.position.y + distance.y,
@@ -96,57 +93,58 @@ Player.prototype.tweencam = function () {
 };
 
 
+function randomnumber(min, max) {
+    return Math.random() * (max - min) + min;
+}
 
 
 Player.prototype.createPlayer = function () {
    
     let lastElapsedTime = 0;
-    const animationSpeed = 1.5;
-    const animationHeight = 0.2;
+    const animationSpeed = 1.2;
+    const animationHeight = 0.3;
 
     // Load player model
     var loader = new GLTFLoader();
 
     loader.load('./client/js/beemodle.glb', (gltf) => {
-        var model = gltf.scene;
-        var bee = model;
+        
+        const bee = gltf.scene;
         var e = 5;
-        console.log(bee)
-        model.scale.set(e, e, e);
-        this.initialY = 10; // Assuming 10 is the starting Y position
+        bee.scale.set(e, e, e);
+        this.initialY = 5; // Assuming 10 is the starting Y position
         bee.position.set(0, this.initialY, 0);
-        bee.position.set(0, 10, 0); 
+      
         this.game.scene.add(gltf.scene);
-       
-        var distance = this.game.camdistance;
+        var distance = this.camdistance;
         this.positionCamera(this.game.camera, gltf.scene, distance.x, distance.y, distance.z);
         this.game.player = bee;
-
-
         this.mixer = new AnimationMixer(bee);
 
         // Extracting animations and storing them
         this.animations = gltf.animations
-        console.log(gltf.animations)
-      
+        console.log(this.animations)
+        this.game.animations['localplayer'] = () => {
 
+            const dt  = game.clock.getDelta() ;
+            const elapsedTime = game.clock.getElapsedTime();
+            const deltaTime = elapsedTime - lastElapsedTime
+            lastElapsedTime = elapsedTime
 
-
-        this.game.animations.updown = () => {
-            const dt = game.clock.getDelta();
-          
-        
             if (!!bee) {
-                const oscillation = Math.sin(dt * animationSpeed) * animationHeight;
+                    
+                const oscillation = Math.sin(elapsedTime * animationSpeed) * animationHeight - 0.1;// Math.sin(dt * animationSpeed) * animationHeight;
                 bee.position.y = this.initialY + oscillation - 0.1;
-               
                 this.movePlayer(dt);
-                this.update(dt);
+                
+                
+
+                   if (this.mixer) {
+        this.mixer.update(dt);
+    }
             }
         };
 
-        
-           
            
         
         this.bee=bee
@@ -156,10 +154,6 @@ Player.prototype.createPlayer = function () {
         let plr = this
         setTimeout(function(){
             plr.playAnimation(['wing2Action.003', 'wing2.001Action']);
-            
-            
-        
-        
             setInterval(function(){plr.sendPlayerData()}  ,1000/60);
         
         
@@ -169,6 +163,9 @@ Player.prototype.createPlayer = function () {
     });
 };
 
+
+
+
 Player.prototype.positionCamera = function (camera, mesh, distanceX, distanceY, distanceZ) {
     camera.position.set(mesh.position.x + distanceX, mesh.position.y + distanceY, mesh.position.z + distanceZ);
 
@@ -177,6 +174,9 @@ Player.prototype.positionCamera = function (camera, mesh, distanceX, distanceY, 
     newPosition.add(offset);
     camera.lookAt(newPosition);
 };
+
+
+
 
 Player.prototype.playAnimation = function (names) {
     if (!Array.isArray(this.animations)) {
@@ -196,12 +196,11 @@ Player.prototype.playAnimation = function (names) {
     });
 };
 
-Player.prototype.update = function (delta) {
-    // Update the mixer on each frame
-    if (this.mixer) {
-        this.mixer.update(delta);
-    }
-};
+
+
+
+
+
 
 
 
@@ -233,103 +232,6 @@ Player.prototype.sendPlayerData = function() {
 
 };
 
-
-
-
-
-
-
-
-
-
-///make other players
-
-
-Player.prototype.createOtherPlayer = function (position,rotation) {
-   
-   
-    const animationSpeed = 1.5;
-    const animationHeight = 0.2;
-
-    // Load player model
-    var loader = new GLTFLoader();
-
-    loader.load('./client/js/beemodle.glb', (gltf) => {
-        var model = gltf.scene;
-        var bee = model;
-        var e = 5;
-        //console.log(bee)
-        model.scale.set(e, e, e);
-        this.initialY = 10; // Assuming 10 is the starting Y position
-        let pos = position;
-        let rot = rotation
-        bee.position.set(pos.x, this.initialY, pos.z);
-        bee.rotation.set(rot.x, rot.y,rot.z); 
-       
-      //  this.updateposition(position,rotation)
-       this.game.scene.add(gltf.scene);
-
-
-        this.mixer = new AnimationMixer(bee);
-
-        // Extracting animations and storing them
-        this.animations = gltf.animations
-//        console.log(gltf.animations)
-      
-
-
-
-        this.game.animations.updown = () => {
-            const dt = game.clock.getDelta();
-          
-        
-            if (!!bee) {
-                const oscillation = Math.sin(dt * animationSpeed) * animationHeight;
-                bee.position.y = this.initialY + oscillation - 0.1;
-               
-               this.update(dt);
-            }
-        };
-
-        
-           
-           
-        
-        this.bee=bee
-        this.isloaded=true
-
-  
-        let plr = this
-        setTimeout(function(){
-            plr.playAnimation(['wing2Action.003', 'wing2.001Action']);
-            //setInterval(function(){plr.updateposition(position,rotation)}  ,1000/60);
-        
-        
-        
-        },1000);
-
-    });
-};
-
-
-
-
-Player.prototype.updateposition = function(position, rotation) {
-    if (!this.bee) {
-        console.error('Bee object does not exist');
-        return;
-    }
-
-    // Update position
-    if (position) {
-        this.bee.position.set(position.x, position.y, position.z);
-    }
-
-    // Update rotation
-    if (rotation) {
-        this.bee.rotation.set(rotation.x, rotation.y, rotation.z);
-    }
-};
 
 
 
