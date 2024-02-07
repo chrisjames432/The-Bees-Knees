@@ -12,41 +12,28 @@ function getRandomColor() {
 function randomnumber(min, max) {
     return Math.random() * (max - min) + min;
 }
-
-export function makeflowers(game, numFlowers, yPosition) {
+export function createFlowers(game, flowersData) {
     const loader = new GLTFLoader();
-    let maxScale=8;
-    let minScale=2;
-
     loader.load('./client/js/flower.glb', (gltf) => {
-        for (let i = 0; i < numFlowers; i++) {
+        flowersData.forEach(flowerData => {
             // Clone the model
             const flower = gltf.scene.clone();
 
             let pedal = flower.children[0].children[0];
-            let randomcolor = getRandomColor();
 
-            // Clone the material and set a random color
+            // Clone the material and set the color
             let newMaterial = pedal.material.clone();
-            newMaterial.color.setHex(randomcolor);
+            newMaterial.color.setHex(flowerData.color);
             pedal.material = newMaterial;
-            
-            // Set a random position for each flower
-            const randomXPosition = randomnumber(-100, 100);
-            const randomZPosition = randomnumber(-100, 100);
-            flower.position.set(randomXPosition, yPosition, randomZPosition);
 
-            // Set random rotation
-            const randomYRotation = Math.random() * Math.PI * 2; // Random rotation between 0 and 360 degrees
-            flower.rotation.set(0, randomYRotation, 0);
-
-            // Set random scale in x
-            const randomXScale = Math.random() * (maxScale - minScale) + minScale; // Random scale between minScale and maxScale
-            const e = 8; // randomXScale;
-            flower.scale.set(e, e, e);
+            // Set position, rotation, and scale from flower data
+            flower.position.set(flowerData.position.x, flowerData.position.y, flowerData.position.z);
+            flower.rotation.set(0, flowerData.rotation.y, 0);
+            flowerData.scale=flowerData.scale*2
+            flower.scale.set(flowerData.scale, flowerData.scale, flowerData.scale);
 
             // Add the flower to the scene
             game.scene.add(flower);
-        }
+        });
     });
 }

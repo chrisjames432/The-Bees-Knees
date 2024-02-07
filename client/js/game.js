@@ -67,7 +67,7 @@ game.init = function () {
 
 
   makegrass();
-  flowers.makeflowers(game,1000,5);
+  
   game.localplayer.createPlayer(5,50,true);
   
 
@@ -118,7 +118,10 @@ game.animate = function () {
 
 }
 
+game.makeflowers= function(data){
 
+  flowers.createFlowers(game,data)
+}
 //-----------------------------------------------------------------------------------------------
 
 
