@@ -23,12 +23,11 @@ function setcam(camera, distanceX, distanceY, distanceZ) {
 
 var game = {};
 game.socket = io();
-//game.player = new Player(game,game.socket)
 game.three = THREE;
 game.animations = {};
 game.o1 = ''
 game.o2 = ''
-
+game.localplayer = new Player(game)
 //-----------------------------------------------------------------------------------------------
 
 game.init = function () {
@@ -83,8 +82,14 @@ function makeother(name,x, gltf){
 }
 
 
+game.localplayer.createPlayer();
+game.localplayer.setupKeyControls();
 
-  
+game.joystick = new JoyStick({
+  onMove: game.localplayer.playerControl.bind(game.localplayer),// game.player.playerControl, // Bind the playerControl function to the player instance
+  game: game
+});
+
 game.o1 = makeother('p1',0, )
 game.o2 = makeother('p2',-5, )
  
@@ -122,7 +127,7 @@ game.animate = function () {
 
   game.o1.update(dt*2)
   game.o2.update(dt*3.4)
-
+  game.localplayer.update(dt)
  
     game.renderscene();
     requestAnimationFrame(game.animate); 

@@ -6,7 +6,7 @@ import { TWEEN } from './three/examples/jsm/libs/tween.module.min.js';
 import { AnimationMixer } from './three/src/animation/AnimationMixer.js';
 import { game } from './game.js';
 
-function Player(game,socket) {
+function Player(game,x,y,z) {
     this.move = {};
     this.move.forward=0;
     this.move.turn=0;
@@ -16,8 +16,9 @@ function Player(game,socket) {
     this.position = new THREE.Vector3();
     this.rotation = new THREE.Euler(); 
     this.bee=""
-    this.socket = socket
-    this.camdistance = {x:1.5, y:5, z:10}
+    this.socket = game.socket
+    this.camdistance = {x:1.5, y:25, z:20}
+    this.mixer=''
 }
 
 Player.prototype.movePlayer = function (dt) {
@@ -63,6 +64,7 @@ Player.prototype.playerControl = function (forward, turn) {
 
     if (forward === 0 && turn === 0) {
       this.tweencam();
+      console.log(this.move)
       this.move.forward=0
       this.move.turn=0
     } else {
@@ -99,10 +101,7 @@ function randomnumber(min, max) {
 
 
 Player.prototype.createPlayer = function () {
-   
-    let lastElapsedTime = 0;
-    const animationSpeed = 1.2;
-    const animationHeight = 0.3;
+  
 
     // Load player model
     var loader = new GLTFLoader();
@@ -124,44 +123,53 @@ Player.prototype.createPlayer = function () {
         // Extracting animations and storing them
         this.animations = gltf.animations
         console.log(this.animations)
-        this.game.animations['localplayer'] = () => {
-
-            const dt  = game.clock.getDelta() ;
-            const elapsedTime = game.clock.getElapsedTime();
-            const deltaTime = elapsedTime - lastElapsedTime
-            lastElapsedTime = elapsedTime
-
-            if (!!bee) {
-                    
-                const oscillation = Math.sin(elapsedTime * animationSpeed) * animationHeight - 0.1;// Math.sin(dt * animationSpeed) * animationHeight;
-                bee.position.y = this.initialY + oscillation - 0.1;
-                this.movePlayer(dt);
-                
-                
-
-                   if (this.mixer) {
-        this.mixer.update(dt);
-    }
-            }
-        };
-
+     
            
         
         this.bee=bee
         this.isloaded=true
-
+        this.playAnimation(['wing2Action.003', 'wing2.001Action']);
         $('#loading_div').delay(200).fadeOut(300);
-        let plr = this
-        setTimeout(function(){
-            plr.playAnimation(['wing2Action.003', 'wing2.001Action']);
-            setInterval(function(){plr.sendPlayerData()}  ,1000/60);
         
-        
-        
-        },1000);
+  
 
     });
 };
+
+
+
+ 
+let lastElapsedTime = 0;
+const animationSpeed = 1.2;
+const animationHeight = 0.3;
+
+
+
+Player.prototype.update = function(dt){
+    const elapsedTime = game.clock.getElapsedTime();
+    const deltaTime = elapsedTime - lastElapsedTime
+    lastElapsedTime = elapsedTime
+   
+
+    if (!!this.bee) {
+            
+        const oscillation = Math.sin(elapsedTime * animationSpeed) * animationHeight - 0.1;// Math.sin(dt * animationSpeed) * animationHeight;
+        this.bee.position.y = this.initialY + oscillation - 0.1;
+        this.movePlayer(dt);
+        if (this.mixer) {    this.mixer.update(dt);}
+        
+       }
+};
+
+
+Player.prototype.sendpacket =function(){
+
+  
+        setInterval(function(){plr.sendPlayerData()}  ,1000/60);
+    
+       
+   
+}
 
 
 
@@ -198,13 +206,6 @@ Player.prototype.playAnimation = function (names) {
 
 
 
-
-
-
-
-
-
-
 // Function to send player data to the server
 Player.prototype.sendPlayerData = function() {
     if (!this.bee || !this.socket) {
@@ -233,6 +234,44 @@ Player.prototype.sendPlayerData = function() {
 };
 
 
+// Add this method inside the Player.prototype
+
+Player.prototype.setupKeyControls = function () {
+    // Object to track the state of each key
+    const keyState = { w: false, s: false, a: false, d: false };
+
+    const updateMovement = () => {
+        let forward = 0;
+        let turn = 0;
+
+        if (keyState.w) forward += 1;
+        if (keyState.s) forward -= 1;
+        if (keyState.a) turn += 1;
+        if (keyState.d) turn -= 1;
+
+        this.playerControl(forward, turn);
+    };
+
+    window.addEventListener('keydown', (event) => {
+        if (['w', 's', 'a', 'd'].includes(event.key)) {
+            keyState[event.key] = true;
+            updateMovement();
+        }
+    });
+
+    window.addEventListener('keyup', (event) => {
+        if (['w', 's', 'a', 'd'].includes(event.key)) {
+            keyState[event.key] = false;
+            updateMovement();
+        }
+    });
+};
+
+
+// You should call this method after creating an instance of the Player class
+// For example:
+// var player = new Player(game);
+// player.setupKeyControls();
 
 
 export { Player };
