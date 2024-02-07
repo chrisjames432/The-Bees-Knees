@@ -4,10 +4,7 @@ console.log('game.js loaded')
 import * as THREE from './three/build/three.module.js';
 import { TWEEN } from './three/examples/jsm/libs/tween.module.min.js';
 import { Player } from './player.js';
-import { JoyStick } from './joystick.js'; 
 import * as flowers from './flowers.js'; 
-import { otherplayer } from './otherplayers.js';  
-import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
 
 
 
@@ -21,13 +18,16 @@ function setcam(camera, distanceX, distanceY, distanceZ) {
   camera.lookAt(offset);
 };
 
+
+
+
+
 var game = {};
 game.socket = io();
 game.three = THREE;
 game.animations = {};
-game.o1 = ''
-game.o2 = ''
 game.localplayer = new Player(game)
+game.remoteplayers = {};
 //-----------------------------------------------------------------------------------------------
 
 game.init = function () {
@@ -63,37 +63,14 @@ game.init = function () {
 
   var axesHelper = new THREE.AxesHelper(5);
   game.scene.add(axesHelper);
-  
-  //game.player.createPlayer() // Create an instance of the Player
-  console.log(game.player)
-  //game.joystick = new JoyStick({ onMove: game.player.playerControl.bind(game.player), game: game  });
+ 
 
 
   makegrass();
-  //flowers.makeflowers(game,1000,5);
-
-
-function makeother(name,x, gltf){
-  let Opos = new THREE.Vector3(x,5,5);
-  let Orot = new THREE.Euler(0,0,0); 
-  var other1 = new otherplayer(game,name)
-  other1.createOtherPlayer(Opos,Orot);
-  return other1
-}
-
-
-game.localplayer.createPlayer();
-game.localplayer.setupKeyControls();
-
-game.joystick = new JoyStick({
-  onMove: game.localplayer.playerControl.bind(game.localplayer),// game.player.playerControl, // Bind the playerControl function to the player instance
-  game: game
-});
-
-game.o1 = makeother('p1',0, )
-game.o2 = makeother('p2',-5, )
- 
+  flowers.makeflowers(game,1000,5);
+  game.localplayer.createPlayer(5,50,true);
   
+
   
   $('#loading_div').delay(200).fadeOut(300);
  setcam(game.camera,5,5,5)
@@ -109,10 +86,12 @@ game.o2 = makeother('p2',-5, )
 
 
 game.animate();
+$('#loading_div').delay(200).fadeOut(300);
 
 }
 
 //-----------------------------------------------------------------------------------------------
+
 
 
 game.animate = function () {
@@ -125,10 +104,15 @@ game.animate = function () {
   TWEEN.update(); // Update all active tweens
   var dt = game.clock.getDelta() ;
 
-  game.o1.update(dt*2)
-  game.o2.update(dt*3.4)
+
   game.localplayer.update(dt)
+  game.localplayer.sendPlayerData()
  
+  game.forEachRemotePlayer((player, dt) => {
+    player.update(dt);
+}, dt); 
+
+
     game.renderscene();
     requestAnimationFrame(game.animate); 
 
@@ -193,7 +177,77 @@ newPosition.add(offset);
   camera.lookAt(newPosition);
 }
 
+let x =0
 //-------------------------------------------------------------------------------------------------------------------------------------------------
+game.managePlayers = function(playerData) {
+  console.log(game.remoteplayers)
+  for (let playerName in playerData) {
+      if (playerData.hasOwnProperty(playerName)) {
+          let playerInfo = playerData[playerName];
+
+
+        
+              if (this.remoteplayers[playerName]) {
+                if (this.remoteplayers[playerName].isloaded) {
+                  console.log('updated player ',playerName )
+                  // Update existing player
+                  this.remoteplayers[playerName].updatePosition(playerInfo.position, playerInfo.rotation);
+                  
+                  
+              }
+              } else {
+                  // Create new player
+                  let newPlayer = new Player(game);
+                 // console.log('created player ',playerName, playerInfo.position.x, playerInfo.position.z  )
+                  newPlayer.createPlayer(5, 5+x);
+                  x=x+3
+                  this.remoteplayers[playerName] = newPlayer;
+              }
+
+
+
+
+
+      }
+  }
+};
+
+
+game.forEachRemotePlayer = function(action, dt) {
+  for (let playerName in this.remoteplayers) {
+      if (this.remoteplayers.hasOwnProperty(playerName)) {
+          let player = this.remoteplayers[playerName];
+          
+          // Check if the player is fully loaded
+          if (player.isloaded) {
+              // Perform the action you want on each loaded player
+              action(player, dt);
+          }
+      }
+  }
+};
+
+
+game.removePlayer = function(playerName) {
+  if (this.remoteplayers[playerName]) {
+      let player = this.remoteplayers[playerName];
+
+      // Check if the player model (bee) exists and remove it from the scene
+      if (player.bee) {
+          this.scene.remove(player.bee);
+      }
+
+      // Delete the player object from the remote players list
+      delete this.remoteplayers[playerName];
+  }
+};
+
+
+game.socket.on('playerDisconnected', function(playerName) {
+  game.removePlayer(playerName);
+});
+
+
 
 
 

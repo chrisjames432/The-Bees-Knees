@@ -22,6 +22,20 @@
 
 <script src="/socket.io/socket.io.js"></script>
 
+
+<style>
+#infobox{
+
+min-width: 100px;
+position: fixed;
+top:0px;
+left:0px;
+z-index: 3
+
+}
+
+</style>
+
 </head>
 
 
@@ -42,6 +56,16 @@
   </div>
 <!-- Write your comments here ---------------------------------------------------------------------------------------->
 
+
+  <div id="infobox">
+    <h2 id="localplayer"></h2>
+    <pre id="pre">
+
+      
+    </pre>
+    
+
+  </div>
 
     <div id="mainscene" class="scene">
 
@@ -139,19 +163,22 @@
     
         var textarea = document.getElementById('textarea');
         var startbutton = document.getElementById('startbutton');
-         textarea.innerHTML=''
-
-
+        var infobox = document.getElementById('infobox');
+        var localplayer = document.getElementById('localplayer');
+        var pre = document.getElementById('pre');
         var playername = ''
+        
+        textarea.innerHTML=''
+        
 
         game.socket.on('message', function (data) {
-          console.log(data)
-            var textNode = document.createTextNode(data.playername);
-            textarea.appendChild(textNode);
-            playername=data.playername
-            
-        });
-
+              console.log(data);
+              var textNode = document.createTextNode(data.playerName); // Using data.playerName
+              textarea.appendChild(textNode);
+              playername = data.playerName; // Corrected to data.playerName
+              localplayer.innerHTML = playername;
+              
+          });
 
 
 
@@ -162,54 +189,19 @@
 
           startbutton.addEventListener('click',function(){
 
-              console.log('buttonclicked')
+            
             var titlescreen = document.getElementById('title-screen');
             titlescreen.style.display = 'none';
-          
+
+
 
 
             game.socket.on('playerlist',function(data){
-
-              //console.log(playername)
-            delete data[playername]
-        //   console.log(data);
-
-  
-
-
-      /*  
-game.otherplayers={}
-// Check if the data object is not empty
-if (Object.keys(data).length > 0) {
-    for (let key in data) {
-        if (data.hasOwnProperty(key)) {
-      //      console.log("Player ID:", key);
-
             
-            // Assuming 'players' is an object containing your current players
-            if (game.otherplayers[key]) {
-                // Player exists, update position and rotation
-               // game.otherplayers[key].updateposition(data[key].position);
-               // players[key].updateRotation(data[key].rotation);
-                // Ensure 'updatePosition' and 'updateRotation' methods are implemented
-            } else {
-                // Player does not exist, create a new one
-                game.otherplayers[key] = new Player(game,game.socket)
-                game.otherplayers[key] = game.otherplayers[key].createOtherPlayer(data[key].position, data[key].rotation);
-                // 'createNewPlayer' is a hypothetical function to instantiate a new player
-            }
-        }
-    }
-} else {
-    console.log("No player data to process");
-}
-
-*/
-//////////////////////////////////////////
-
-
-
-
+            delete data[playername]
+            var jsonString = JSON.stringify(data, null, 2); // Convert JSON object to string with 2-space indentation
+            pre.textContent = jsonString;
+            game.managePlayers(data)
 
 
             })
@@ -217,10 +209,12 @@ if (Object.keys(data).length > 0) {
 
 
 
+
+
           })
 
 
-        });
+     });
 
     </script>
 

@@ -1,75 +1,44 @@
-// SocketManager.js
-
-var count = 1;
-
-
 class SocketManager {
-        constructor(io) {
-          this.io = io;
-          this.PLAYER_LIST = {};
-          this.initializeSocketEvents();
-          var d = this
-          setInterval(function(){
-            console.log(d.PLAYER_LIST)
-          },500)
-        }
-      
-    initializeSocketEvents() {
-          this.io.sockets.on('connection', (socket) => {
-
-              const playername = 'Player'+count;
-              this.PLAYER_LIST[playername]={};
-              count=count+1
-
-              socket.emit('message',{playername:playername,loc:[0,10,10]} );
-              //socket.emit('message',String(this.PLAYER_LIST));
-
-
-              //////////////////////////
-
-              socket.on('disconnect', () => {
-              delete this.PLAYER_LIST[playername];
-              console.log(playername, ' left the game');
-              });
-
-
-              //////////////////////
-          
-              var pl =this
-              setInterval(() => {
-               
-                socket.emit('playerlist',pl.PLAYER_LIST)
-
-              }, 1000/60);
-
-              socket.on('playerData',(data)=>{
-
-
-                if(this.PLAYER_LIST[playername] != undefined){
-                  this.PLAYER_LIST[playername]=data
-
-                }
-                
-                
-              //  console.log(data)
-
-
-              })
-              /////////////////////////////
-
-          });
-          //end of on connection
-
-
-
-        }
-        //end of init sockets
-    
-
-
-   
-    //end of class
+  constructor(io) {
+    this.io = io;
+    this.playerList = {};
+    this.initializeSocketEvents();
+    this.setupBroadcast();
   }
-  
-  module.exports = SocketManager;
-  
+
+  getNextPlayerId() {
+    return `Player${++count}`;
+  }
+
+  setupBroadcast() {
+    setInterval(() => {
+      this.io.sockets.emit('playerlist', this.playerList);
+      console.log(this.playerList)
+    }, 1000 / 60);
+  }
+
+  initializeSocketEvents() {
+    this.io.sockets.on('connection', (socket) => {
+      const playerName = this.getNextPlayerId();
+      this.playerList[playerName] = {};
+
+      socket.emit('message', { playerName, loc: [0, 10, 10] });
+
+      socket.on('disconnect', () => {
+        delete this.playerList[playerName];
+        console.log(`${playerName} left the game`);
+        this.io.sockets.emit('playerDisconnected', playerName);
+      });
+
+      socket.on('playerData', (data) => {
+        if (this.playerList[playerName] !== undefined) {
+          this.playerList[playerName] = data;
+        }
+      });
+    });
+  }
+}
+
+let count = 0;
+
+module.exports = SocketManager;

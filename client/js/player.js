@@ -5,8 +5,31 @@ import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
 import { TWEEN } from './three/examples/jsm/libs/tween.module.min.js';
 import { AnimationMixer } from './three/src/animation/AnimationMixer.js';
 import { game } from './game.js';
+import { JoyStick } from './joystick.js'; 
 
-function Player(game,x,y,z) {
+
+function getRandomNumberWithTwoDecimals(x, y) {
+    if (x > y) {
+        // Swap x and y to ensure x is always less than or equal to y
+        [x, y] = [y, x];
+    }
+    const random = Math.random() * (y - x) + x;
+    return parseFloat(random.toFixed(2));
+  }
+  
+
+//random number function ----------------------------------
+function randomnumber(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+
+
+
+//
+
+//Start of player class --------------------------------------
+function Player(game) {
     this.move = {};
     this.move.forward=0;
     this.move.turn=0;
@@ -19,8 +42,17 @@ function Player(game,x,y,z) {
     this.socket = game.socket
     this.camdistance = {x:1.5, y:25, z:20}
     this.mixer=''
+    this.initialY = 5;
+    this.randomdt = getRandomNumberWithTwoDecimals(2,4);
+    this.local=false
+
 }
 
+
+
+
+//
+//This function sets player position and rotation for local player controls. 
 Player.prototype.movePlayer = function (dt) {
  
     if (this.isloaded==true) {
@@ -47,6 +79,8 @@ Player.prototype.movePlayer = function (dt) {
 };
 
 
+//
+//Sets forward and turn for controls and will be used to trigger animations -----------------
 Player.prototype.playerControl = function (forward, turn) {
 
     if (forward < 0) {
@@ -74,6 +108,9 @@ Player.prototype.playerControl = function (forward, turn) {
     }
 };
 
+
+//
+//Tweens the local player camera ------------------------------------------------------
 Player.prototype.tweencam = function () {
     const currentCameraPosition = this.game.camera.position.clone();
     const distance = this.camdistance;
@@ -95,12 +132,10 @@ Player.prototype.tweencam = function () {
 };
 
 
-function randomnumber(min, max) {
-    return Math.random() * (max - min) + min;
-}
 
-
-Player.prototype.createPlayer = function () {
+//
+//Load gltf and set player start location ----------------------------------
+Player.prototype.createPlayer = function (x,z, local=false) {
   
 
     // Load player model
@@ -111,26 +146,39 @@ Player.prototype.createPlayer = function () {
         const bee = gltf.scene;
         var e = 5;
         bee.scale.set(e, e, e);
-        this.initialY = 5; // Assuming 10 is the starting Y position
-        bee.position.set(0, this.initialY, 0);
+        // Assuming 10 is the starting Y position
+        bee.position.set(x, this.initialY, z);
       
         this.game.scene.add(gltf.scene);
-        var distance = this.camdistance;
-        this.positionCamera(this.game.camera, gltf.scene, distance.x, distance.y, distance.z);
-        this.game.player = bee;
+     
         this.mixer = new AnimationMixer(bee);
 
         // Extracting animations and storing them
         this.animations = gltf.animations
-        console.log(this.animations)
+        //console.log(this.animations)
      
            
         
         this.bee=bee
         this.isloaded=true
         this.playAnimation(['wing2Action.003', 'wing2.001Action']);
-        $('#loading_div').delay(200).fadeOut(300);
+       
         
+        if(local){
+        this.local=true
+        console.log('local true')
+        var distance = this.camdistance;
+        this.positionCamera(this.game.camera, gltf.scene, distance.x, distance.y, distance.z);
+        game.localplayer.setupKeyControls();
+
+        let localpl = this
+        this.joystick = new JoyStick({
+            onMove: this.playerControl.bind(localpl),// game.player.playerControl, // Bind the playerControl function to the player instance
+            game: game
+          });
+          
+    
+       }
   
 
     });
@@ -155,21 +203,15 @@ Player.prototype.update = function(dt){
             
         const oscillation = Math.sin(elapsedTime * animationSpeed) * animationHeight - 0.1;// Math.sin(dt * animationSpeed) * animationHeight;
         this.bee.position.y = this.initialY + oscillation - 0.1;
-        this.movePlayer(dt);
-        if (this.mixer) {    this.mixer.update(dt);}
+       
+       
+       if(this.local) this.movePlayer(dt);
+        if (this.mixer) {    this.mixer.update(dt*this.randomdt);}
         
        }
 };
 
 
-Player.prototype.sendpacket =function(){
-
-  
-        setInterval(function(){plr.sendPlayerData()}  ,1000/60);
-    
-       
-   
-}
 
 
 
@@ -212,7 +254,7 @@ Player.prototype.sendPlayerData = function() {
         console.error('Player data or socket is not available');
         return;
     }
-
+    //console.log('playerdata sent')
     // Extract position and rotation data
     const playerData = {
         position: {
@@ -274,4 +316,20 @@ Player.prototype.setupKeyControls = function () {
 // player.setupKeyControls();
 
 
+Player.prototype.updatePosition = function(position, rotation) {
+    if (!this.bee) {
+        console.error('Bee object does not exist');
+        return;
+    }
+
+    // Update position
+    if (position) {
+        this.bee.position.set(position.x, position.y, position.z);
+    }
+
+    // Update rotation
+    if (rotation) {
+        this.bee.rotation.set(rotation.x, rotation.y, rotation.z);
+    }
+};
 export { Player };
