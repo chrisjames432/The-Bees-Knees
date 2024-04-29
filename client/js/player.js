@@ -142,7 +142,7 @@ Player.prototype.movePlayer = function (dt) {
     if (this.isloaded==true) {
    
         const move = this.move;
-        const speed =6;
+        const speed =16;
         const moveSpeed = speed;
         const turnSpeed = speed;
         const bee = this.bee;

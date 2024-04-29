@@ -16,6 +16,7 @@ export function createFlowers(game, flowersData) {
     const loader = new GLTFLoader();
     let maxScale=8;
     let minScale=2;
+    let yPosition=0;
 
     loader.load('./client/js/flower.glb', (gltf) => {
         flowersData.forEach(flowerData => {
