@@ -12,23 +12,21 @@ function getRandomColor() {
 function randomnumber(min, max) {
     return Math.random() * (max - min) + min;
 }
-
-export function makeflowers(game, numFlowers, yPosition) {
+export function createFlowers(game, flowersData) {
     const loader = new GLTFLoader();
-    let maxScale=16;
-    let minScale=4;
+    let maxScale=8;
+    let minScale=2;
 
     loader.load('./client/js/flower.glb', (gltf) => {
-        for (let i = 0; i < numFlowers; i++) {
+        flowersData.forEach(flowerData => {
             // Clone the model
             const flower = gltf.scene.clone();
 
             let pedal = flower.children[0].children[0];
-            let randomcolor = getRandomColor();
 
-            // Clone the material and set a random color
+            // Clone the material and set the color
             let newMaterial = pedal.material.clone();
-            newMaterial.color.setHex(randomcolor);
+            newMaterial.color.setHex(flowerData.color);
             pedal.material = newMaterial;
             
             // Set a random position for each flower
@@ -42,11 +40,11 @@ export function makeflowers(game, numFlowers, yPosition) {
 
             // Set random scale in x
             const randomXScale = Math.random() * (maxScale - minScale) + minScale; // Random scale between minScale and maxScale
-            const e = randomnumber(minScale,maxScale); // randomXScale;
+            const e = 8; // randomXScale;
             flower.scale.set(e, e, e);
 
             // Add the flower to the scene
             game.scene.add(flower);
-        }
+        });
     });
 }
