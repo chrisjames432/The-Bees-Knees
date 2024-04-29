@@ -5,6 +5,8 @@ import * as THREE from './three/build/three.module.js';
 import { TWEEN } from './three/examples/jsm/libs/tween.module.min.js';
 import { Player } from './player.js';
 import * as flowers from './flowers.js'; 
+import * as trees from './trees.js'; 
+
 
 
 
@@ -67,8 +69,9 @@ game.init = function () {
 
 
   makegrass();
-  flowers.makeflowers(game,1000,5);
-  game.localplayer.createPlayer(5,50,true);
+  flowers.makeflowers(game,1000,0);
+  trees.maketrees(game,5,0);
+  game.localplayer.createPlayer(5,20,true);
   
 
   

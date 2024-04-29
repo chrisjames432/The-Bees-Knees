@@ -25,6 +25,87 @@ function randomnumber(min, max) {
 
 
 
+// Define min and max values for the z axis
+const minZValue = -50;
+const maxZValue = 50;
+var zvalue = -15;
+
+
+
+
+
+function calculateIdealOffset(model) {
+	const idealOffset = new THREE.Vector3(-2, 2, zvalue);
+
+	// Create a copy of the idealOffset vector
+	const idealOffsetCopy = idealOffset.clone();
+
+	// Calculate quaternion representing the model's rotation
+	const quaternion = new THREE.Quaternion().setFromEuler(model.rotation);
+
+	// Apply quaternion rotation to the idealOffset vector
+	idealOffsetCopy.applyQuaternion(quaternion);
+
+	// Add model's position to the rotated idealOffset vector
+	idealOffsetCopy.add(model.position);
+
+	return idealOffsetCopy;
+}
+
+  
+////////////////////////////////////////////
+
+
+
+function calculateIdealLookat(model) {
+	const idealLookat = new THREE.Vector3(0, 10, 50);
+	const quaternion = new THREE.Quaternion();
+
+	// Create a copy of the idealLookat vector
+	const idealLookatCopy = idealLookat.clone();
+
+	// Calculate quaternion representing the model's rotation
+	quaternion.setFromEuler(model.rotation);
+
+	// Apply quaternion rotation to the idealLookat vector
+	idealLookatCopy.applyQuaternion(quaternion);
+
+	// Add model's position to the rotated idealLookat vector
+	idealLookatCopy.add(model.position);
+
+	// Console log the quaternion
+	//console.log(quaternion);
+
+	// Console log the resulting vector
+	//console.log(idealLookatCopy);
+
+	return idealLookatCopy;
+}
+
+
+
+
+
+//////////////////////////////
+
+  function updateCamera(obj,camera, model, timeElapsed) {
+	const idealOffset = calculateIdealOffset(model);
+	const idealLookat = calculateIdealLookat(model);
+	//console.log(idealLookat)
+	//console.log(idealOffset)
+	//console.log(model)
+	//console.log(camera)
+	const t = 1.0 - Math.pow(0.001, timeElapsed);
+  
+	obj._currentPosition.lerp(idealOffset, t);
+	obj._currentLookat.lerp(idealLookat, t);
+  
+	camera.position.copy(obj._currentPosition);
+	camera.lookAt(obj._currentLookat);
+  }
+  
+  
+
 
 //
 
@@ -45,6 +126,9 @@ function Player(game) {
     this.initialY = 5;
     this.randomdt = getRandomNumberWithTwoDecimals(2,4);
     this.local=false
+    this._currentPosition = new THREE.Vector3();
+    this._currentLookat = new THREE.Vector3();
+
 
 }
 
@@ -126,7 +210,7 @@ Player.prototype.tweencam = function () {
         .easing(TWEEN.Easing.Quadratic.In)
         .onUpdate(() => {
             
-            this.game.camera.position.copy(currentCameraPosition);
+          //  this.game.camera.position.copy(currentCameraPosition);
         })
         .start();
 };
@@ -205,10 +289,20 @@ Player.prototype.update = function(dt){
         this.bee.position.y = this.initialY + oscillation - 0.1;
        
        
-       if(this.local) this.movePlayer(dt);
+		updateCamera(this, this.game.camera,this.bee, dt)
+       
+        if(this.local) this.movePlayer(dt);
         if (this.mixer) {    this.mixer.update(dt*this.randomdt);}
         
        }
+
+
+
+
+
+
+
+
 };
 
 

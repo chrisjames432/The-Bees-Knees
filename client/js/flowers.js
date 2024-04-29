@@ -15,8 +15,8 @@ function randomnumber(min, max) {
 
 export function makeflowers(game, numFlowers, yPosition) {
     const loader = new GLTFLoader();
-    let maxScale=8;
-    let minScale=2;
+    let maxScale=16;
+    let minScale=4;
 
     loader.load('./client/js/flower.glb', (gltf) => {
         for (let i = 0; i < numFlowers; i++) {
@@ -42,7 +42,7 @@ export function makeflowers(game, numFlowers, yPosition) {
 
             // Set random scale in x
             const randomXScale = Math.random() * (maxScale - minScale) + minScale; // Random scale between minScale and maxScale
-            const e = 8; // randomXScale;
+            const e = randomnumber(minScale,maxScale); // randomXScale;
             flower.scale.set(e, e, e);
 
             // Add the flower to the scene
