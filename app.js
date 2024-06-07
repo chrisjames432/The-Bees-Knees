@@ -1,17 +1,13 @@
 // Dependencies
 
 var bodyParser = require('body-parser');
-const fs = require('fs');
 const http = require('http');
-const https = require('https');
 const express = require('express');
 var path = require('path');
 const app = express();
 const SocketManager = require('./SocketManager'); // Import the SocketManager class
 var sessions = require('client-sessions');
-var validation = require('express-validator');
 var cors = require('cors');
-
 
 //enables cors
 app.use(cors({
@@ -42,7 +38,6 @@ app.use(sessions({
 
 
 app.use(cookieParser());
-
 
 app.get('/', function (req, res) {
 	res.sendFile(__dirname + '/client/index.html');
