@@ -1,0 +1,146 @@
+html,
+body {
+  margin: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+}
+
+#loading_div {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  position: fixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+  z-index: 3;
+}
+
+#loaderbox {
+  text-align: center;
+  border: 1px solid white;
+  padding: 20px;
+  background-color: rgb(255, 255, 255);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#loaderbox h1 {
+  color: rgb(11, 11, 1);
+}
+
+.loader {
+  border: 16px solid rgb(247, 238, 5);
+  border-radius: 50%;
+  border-top: 16px solid rgb(36, 35, 35);
+  width: 100px;
+  height: 100px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Apply the "Bangers" font to headings */
+h1, h2, h3 {
+  font-family: 'Bangers';
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1; /* Ensure it's above the Three.js scene */
+  color: white;
+  font-family: 'Bangers', sans-serif;
+}
+
+#start-button {
+  padding: 10px 20px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+#infobox {
+  min-width: 100px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 3;
+}
+
+.container-fluid {
+  max-width: 90%;
+}
+
+#textarea {
+  font-family: 'Poppins', sans-serif;
+  max-width: 60%;
+}
+
+.center-text {
+  text-align: center;
+}
+
+/* Add custom CSS for styling */
+.hero-section {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.hero-title {
+  font-size: 5rem;
+  margin-bottom: 50px;
+}
+
+.hero-text {
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+}
+
+.start-button {
+  background-color: #ff6f61; /* Customize the button color */
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 50px;
+  transition: background-color 0.3s ease;
+}
+
+.start-button:hover {
+  background-color: #e65348; /* Change button color on hover */
+}

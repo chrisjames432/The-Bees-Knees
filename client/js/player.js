@@ -1,429 +1,276 @@
+
 // player.js
 
-import * as THREE from './three/build/three.module.js';
-import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
-import { TWEEN } from './three/examples/jsm/libs/tween.module.min.js';
-import { AnimationMixer } from './three/src/animation/AnimationMixer.js';
+console.log('threemain/examples/jsm/loaders/GLTFLoader.js')
+import * as THREE from 'three';
+import { GLTFLoader } from 'threemain/examples/jsm/loaders/GLTFLoader.js';
+import { Tween, Easing } from 'three/addons/libs/tween.module.min.js';
+import { AnimationMixer } from 'threemain/src/animation/AnimationMixer.js';
 import { game } from './game.js';
 import { JoyStick } from './joystick.js'; 
 
-
 function getRandomNumberWithTwoDecimals(x, y) {
-    if (x > y) {
-        // Swap x and y to ensure x is always less than or equal to y
-        [x, y] = [y, x];
-    }
-    const random = Math.random() * (y - x) + x;
-    return parseFloat(random.toFixed(2));
+  if (x > y) {
+    [x, y] = [y, x];
   }
-  
-
-//random number function ----------------------------------
-function randomnumber(min, max) {
-    return Math.random() * (max - min) + min;
+  const random = Math.random() * (y - x) + x;
+  return parseFloat(random.toFixed(2));
 }
 
+function randomnumber(min, max) {
+  return Math.random() * (max - min) + min;
+}
 
-
-// Define min and max values for the z axis
 const minZValue = -50;
 const maxZValue = 50;
 var zvalue = -15;
 
-
-
-
-
 function calculateIdealOffset(model) {
-	const idealOffset = new THREE.Vector3(-2, 2, zvalue);
-
-	// Create a copy of the idealOffset vector
-	const idealOffsetCopy = idealOffset.clone();
-
-	// Calculate quaternion representing the model's rotation
-	const quaternion = new THREE.Quaternion().setFromEuler(model.rotation);
-
-	// Apply quaternion rotation to the idealOffset vector
-	idealOffsetCopy.applyQuaternion(quaternion);
-
-	// Add model's position to the rotated idealOffset vector
-	idealOffsetCopy.add(model.position);
-
-	return idealOffsetCopy;
+  const idealOffset = new THREE.Vector3(-2, 2, zvalue);
+  const idealOffsetCopy = idealOffset.clone();
+  const quaternion = new THREE.Quaternion().setFromEuler(model.rotation);
+  idealOffsetCopy.applyQuaternion(quaternion);
+  idealOffsetCopy.add(model.position);
+  return idealOffsetCopy;
 }
-
-  
-////////////////////////////////////////////
-
-
 
 function calculateIdealLookat(model) {
-	const idealLookat = new THREE.Vector3(0, 10, 50);
-	const quaternion = new THREE.Quaternion();
-
-	// Create a copy of the idealLookat vector
-	const idealLookatCopy = idealLookat.clone();
-
-	// Calculate quaternion representing the model's rotation
-	quaternion.setFromEuler(model.rotation);
-
-	// Apply quaternion rotation to the idealLookat vector
-	idealLookatCopy.applyQuaternion(quaternion);
-
-	// Add model's position to the rotated idealLookat vector
-	idealLookatCopy.add(model.position);
-
-	// Console log the quaternion
-	//console.log(quaternion);
-
-	// Console log the resulting vector
-	//console.log(idealLookatCopy);
-
-	return idealLookatCopy;
+  const idealLookat = new THREE.Vector3(0, 10, 50);
+  const quaternion = new THREE.Quaternion();
+  const idealLookatCopy = idealLookat.clone();
+  quaternion.setFromEuler(model.rotation);
+  idealLookatCopy.applyQuaternion(quaternion);
+  idealLookatCopy.add(model.position);
+  return idealLookatCopy;
 }
 
+function updateCamera(obj, camera, model, timeElapsed) {
+  const idealOffset = calculateIdealOffset(model);
+  const idealLookat = calculateIdealLookat(model);
+  const t = 1.0 - Math.pow(0.001, timeElapsed);
+  obj._currentPosition.lerp(idealOffset, t);
+  obj._currentLookat.lerp(idealLookat, t);
+  camera.position.copy(obj._currentPosition);
+  camera.lookAt(obj._currentLookat);
+}
 
-
-
-
-//////////////////////////////
-
-  function updateCamera(obj,camera, model, timeElapsed) {
-	const idealOffset = calculateIdealOffset(model);
-	const idealLookat = calculateIdealLookat(model);
-	//console.log(idealLookat)
-	//console.log(idealOffset)
-	//console.log(model)
-	//console.log(camera)
-	const t = 1.0 - Math.pow(0.001, timeElapsed);
-  
-	obj._currentPosition.lerp(idealOffset, t);
-	obj._currentLookat.lerp(idealLookat, t);
-  
-	camera.position.copy(obj._currentPosition);
-	camera.lookAt(obj._currentLookat);
-  }
-  
-  
-
-
-//
-
-//Start of player class --------------------------------------
 function Player(game) {
-    this.move = {};
-    this.move.forward=0;
-    this.move.turn=0;
-    this.action = '';
-    this.game = game
-    this.isloaded = false
-    this.position = new THREE.Vector3();
-    this.rotation = new THREE.Euler(); 
-    this.bee=""
-    this.socket = game.socket
-    this.camdistance = {x:1.5, y:25, z:20}
-    this.mixer=''
-    this.initialY = 5;
-    this.randomdt = getRandomNumberWithTwoDecimals(2,4);
-    this.local=false
-    this._currentPosition = new THREE.Vector3();
-    this._currentLookat = new THREE.Vector3();
-
-
+  this.move = {};
+  this.move.forward = 0;
+  this.move.turn = 0;
+  this.action = '';
+  this.game = game;
+  this.isloaded = false;
+  this.position = new THREE.Vector3();
+  this.rotation = new THREE.Euler(); 
+  this.bee = "";
+  this.socket = game.socket;
+  this.camdistance = { x: 1.5, y: 25, z: 20 };
+  this.mixer = '';
+  this.initialY = 5;
+  this.randomdt = getRandomNumberWithTwoDecimals(2, 4);
+  this.local = false;
+  this._currentPosition = new THREE.Vector3();
+  this._currentLookat = new THREE.Vector3();
 }
 
-
-
-
-//
-//This function sets player position and rotation for local player controls. 
 Player.prototype.movePlayer = function (dt) {
- 
-    if (this.isloaded==true) {
-   
-        const move = this.move;
-        const speed =16;
-        const moveSpeed = speed;
-        const turnSpeed = speed;
-        const bee = this.bee;
-    
-        if (move) {
-            const forwardMovement = move.forward * moveSpeed * dt;
-            const turnMovement = move.turn * turnSpeed * dt;
+  if (this.isloaded == true) {
+    const move = this.move;
+    const speed = 16;
+    const moveSpeed = speed;
+    const turnSpeed = speed;
+    const bee = this.bee;
 
-            const pos = bee.position.clone();
-            //pos.y += 0;
-            pos.x += Math.sin(bee.rotation.y) * forwardMovement;
-            pos.z += Math.cos(bee.rotation.y) * forwardMovement;
-
-            bee.position.copy(pos);
-            bee.rotation.y += turnMovement;
-        }
+    if (move) {
+      const forwardMovement = move.forward * moveSpeed * dt;
+      const turnMovement = move.turn * turnSpeed * dt;
+      const pos = bee.position.clone();
+      pos.x += Math.sin(bee.rotation.y) * forwardMovement;
+      pos.z += Math.cos(bee.rotation.y) * forwardMovement;
+      bee.position.copy(pos);
+      bee.rotation.y += turnMovement;
     }
+  }
 };
 
-
-//
-//Sets forward and turn for controls and will be used to trigger animations -----------------
 Player.prototype.playerControl = function (forward, turn) {
+  if (forward < 0) {
+    turn = -turn;
+    this.move.forward = forward;
+    this.move.turn = turn;
+  }
 
-    if (forward < 0) {
-        turn = -turn;
-        //this.move = { forward, turn };
-        this.move.forward=forward
-        this.move.turn=turn
-    }
+  if (forward > 0) {
+    if (this.action !== 'walk') this.action = 'walk';
+  } else {
+    this.action = 'look-around';
+  }
 
-    if (forward > 0) {
-        if (this.action !== 'walk') this.action = 'walk';
-    } else {
-        this.action = 'look-around';
-    }
-
-    if (forward === 0 && turn === 0) {
-      this.tweencam();
-      console.log(this.move)
-      this.move.forward=0
-      this.move.turn=0
-    } else {
-    
-        this.move.forward=forward
-        this.move.turn=turn
-    }
+  if (forward === 0 && turn === 0) {
+    this.tweencam();
+    this.move.forward = 0;
+    this.move.turn = 0;
+  } else {
+    this.move.forward = forward;
+    this.move.turn = turn;
+  }
 };
 
-
-//
-//Tweens the local player camera ------------------------------------------------------
 Player.prototype.tweencam = function () {
-    const currentCameraPosition = this.game.camera.position.clone();
-    const distance = this.camdistance;
-    const targetCameraPosition = new THREE.Vector3(
-        this.bee.position.x + distance.x,
-        this.bee.position.y + distance.y,
-        this.bee.position.z + distance.z
-    );
+  const currentCameraPosition = this.game.camera.position.clone();
+  const distance = this.camdistance;
+  const targetCameraPosition = new THREE.Vector3(
+    this.bee.position.x + distance.x,
+    this.bee.position.y + distance.y,
+    this.bee.position.z + distance.z
+  );
 
-    const tweenDuration = 2000;
-    new TWEEN.Tween(currentCameraPosition)
-        .to(targetCameraPosition, tweenDuration)
-        .easing(TWEEN.Easing.Quadratic.In)
-        .onUpdate(() => {
-            
-          //  this.game.camera.position.copy(currentCameraPosition);
-        })
-        .start();
+  const tweenDuration = 2000;
+  new Tween(currentCameraPosition)
+    .to(targetCameraPosition, tweenDuration)
+    .easing(Easing.Quadratic.In)
+    .onUpdate(() => {
+      this.game.camera.position.copy(currentCameraPosition);
+    })
+    .start();
 };
 
+Player.prototype.createPlayer = function (x, z, local = false) {
+  var loader = new GLTFLoader();
 
+  loader.load('./client/js/glb/beemodle.glb', (gltf) => {
+    const bee = gltf.scene;
+    var e = 5;
+    bee.scale.set(e, e, e);
+    bee.position.set(x, this.initialY, z);
+    this.game.scene.add(gltf.scene);
+    this.mixer = new AnimationMixer(bee);
+    this.animations = gltf.animations;
+    this.bee = bee;
+    this.isloaded = true;
+    this.playAnimation(['wing2Action.003', 'wing2.001Action']);
 
-//
-//Load gltf and set player start location ----------------------------------
-Player.prototype.createPlayer = function (x,z, local=false) {
-  
-
-    // Load player model
-    var loader = new GLTFLoader();
-
-    loader.load('./client/js/beemodle.glb', (gltf) => {
-        
-        const bee = gltf.scene;
-        var e = 5;
-        bee.scale.set(e, e, e);
-        // Assuming 10 is the starting Y position
-        bee.position.set(x, this.initialY, z);
-      
-        this.game.scene.add(gltf.scene);
-     
-        this.mixer = new AnimationMixer(bee);
-
-        // Extracting animations and storing them
-        this.animations = gltf.animations
-        //console.log(this.animations)
-     
-           
-        
-        this.bee=bee
-        this.isloaded=true
-        this.playAnimation(['wing2Action.003', 'wing2.001Action']);
-       
-        
-        if(local){
-        this.local=true
-        console.log('local true')
-        var distance = this.camdistance;
-        this.positionCamera(this.game.camera, gltf.scene, distance.x, distance.y, distance.z);
-        game.localplayer.setupKeyControls();
-
-        let localpl = this
-        this.joystick = new JoyStick({
-            onMove: this.playerControl.bind(localpl),// game.player.playerControl, // Bind the playerControl function to the player instance
-            game: game
-          });
-          
-    
-       }
-  
-
-    });
+    if (local) {
+      this.local = true;
+      var distance = this.camdistance;
+      this.positionCamera(this.game.camera, gltf.scene, distance.x, distance.y, distance.z);
+      game.localplayer.setupKeyControls();
+      let localpl = this;
+      this.joystick = new JoyStick({
+        onMove: this.playerControl.bind(localpl),
+        game: game
+      });
+    }
+  });
 };
 
-
-
- 
 let lastElapsedTime = 0;
 const animationSpeed = 1.2;
 const animationHeight = 0.3;
 
+Player.prototype.update = function (dt) {
+  const elapsedTime = game.clock.getElapsedTime();
+  const deltaTime = elapsedTime - lastElapsedTime;
+  lastElapsedTime = elapsedTime;
 
+  if (!!this.bee) {
+    const oscillation = Math.sin(elapsedTime * animationSpeed) * animationHeight - 0.1;
+    this.bee.position.y = this.initialY + oscillation - 0.1;
+    updateCamera(this, this.game.camera, this.bee, dt);
 
-Player.prototype.update = function(dt){
-    const elapsedTime = game.clock.getElapsedTime();
-    const deltaTime = elapsedTime - lastElapsedTime
-    lastElapsedTime = elapsedTime
-   
-
-    if (!!this.bee) {
-            
-        const oscillation = Math.sin(elapsedTime * animationSpeed) * animationHeight - 0.1;// Math.sin(dt * animationSpeed) * animationHeight;
-        this.bee.position.y = this.initialY + oscillation - 0.1;
-       
-       
-		updateCamera(this, this.game.camera,this.bee, dt)
-       
-        if(this.local) this.movePlayer(dt);
-        if (this.mixer) {    this.mixer.update(dt*this.randomdt);}
-        
-       }
-
-
-
-
-
-
-
-
+    if (this.local) this.movePlayer(dt);
+    if (this.mixer) { this.mixer.update(dt * this.randomdt); }
+  }
 };
-
-
-
-
-
 
 Player.prototype.positionCamera = function (camera, mesh, distanceX, distanceY, distanceZ) {
-    camera.position.set(mesh.position.x + distanceX, mesh.position.y + distanceY, mesh.position.z + distanceZ);
-
-    var offset = new THREE.Vector3(0, 1, 0);
-    var newPosition = mesh.position.clone();
-    newPosition.add(offset);
-    camera.lookAt(newPosition);
+  camera.position.set(mesh.position.x + distanceX, mesh.position.y + distanceY, mesh.position.z + distanceZ);
+  var offset = new THREE.Vector3(0, 1, 0);
+  var newPosition = mesh.position.clone();
+  newPosition.add(offset);
+  camera.lookAt(newPosition);
 };
-
-
-
 
 Player.prototype.playAnimation = function (names) {
-    if (!Array.isArray(this.animations)) {
-        console.error('this.animations is not an array:', this.animations);
-        return;
-    }
+  if (!Array.isArray(this.animations)) {
+    console.error('this.animations is not an array:', this.animations);
+    return;
+  }
 
-    names.forEach(name => {
-        const clip = this.animations.find(anim => anim.name === name);
-        if (clip) {
-            const action = this.mixer.existingAction(clip) || this.mixer.clipAction(clip);
-            action.setLoop(THREE.LoopRepeat, Infinity);
-            action.play();
-        } else {
-            console.error('Animation not found:', name);
-        }
-    });
+  names.forEach(name => {
+    const clip = this.animations.find(anim => anim.name === name);
+    if (clip) {
+      const action = this.mixer.existingAction(clip) || this.mixer.clipAction(clip);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.play();
+    } else {
+      console.error('Animation not found:', name);
+    }
+  });
 };
 
-
-
-// Function to send player data to the server
 Player.prototype.sendPlayerData = function() {
-    if (!this.bee || !this.socket) {
-        console.error('Player data or socket is not available');
-        return;
+  if (!this.bee || !this.socket) {
+    console.error('Player data or socket is not available');
+    return;
+  }
+  const playerData = {
+    position: {
+      x: this.bee.position.x,
+      y: this.bee.position.y,
+      z: this.bee.position.z
+    },
+    rotation: {
+      x: this.bee.rotation.x,
+      y: this.bee.rotation.y,
+      z: this.bee.rotation.z
     }
-    //console.log('playerdata sent')
-    // Extract position and rotation data
-    const playerData = {
-        position: {
-            x: this.bee.position.x,
-            y: this.bee.position.y,
-            z: this.bee.position.z
-        },
-        rotation: {
-            x: this.bee.rotation.x,
-            y: this.bee.rotation.y,
-            z: this.bee.rotation.z
-        }
-    };
-
-    // Emit the data to the server
-    this.socket.emit('playerData', playerData);
- 
-
+  };
+  this.socket.emit('playerData', playerData);
 };
-
-
-// Add this method inside the Player.prototype
 
 Player.prototype.setupKeyControls = function () {
-    // Object to track the state of each key
-    const keyState = { w: false, s: false, a: false, d: false };
+  const keyState = { w: false, s: false, a: false, d: false };
 
-    const updateMovement = () => {
-        let forward = 0;
-        let turn = 0;
+  const updateMovement = () => {
+    let forward = 0;
+    let turn = 0;
 
-        if (keyState.w) forward += 1;
-        if (keyState.s) forward -= 1;
-        if (keyState.a) turn += 1;
-        if (keyState.d) turn -= 1;
+    if (keyState.w) forward += 1;
+    if (keyState.s) forward -= 1;
+    if (keyState.a) turn += 1;
+    if (keyState.d) turn -= 1;
 
-        this.playerControl(forward, turn);
-    };
+    this.playerControl(forward, turn);
+  };
 
-    window.addEventListener('keydown', (event) => {
-        if (['w', 's', 'a', 'd'].includes(event.key)) {
-            keyState[event.key] = true;
-            updateMovement();
-        }
-    });
+  window.addEventListener('keydown', (event) => {
+    if (['w', 's', 'a', 'd'].includes(event.key)) {
+      keyState[event.key] = true;
+      updateMovement();
+    }
+  });
 
-    window.addEventListener('keyup', (event) => {
-        if (['w', 's', 'a', 'd'].includes(event.key)) {
-            keyState[event.key] = false;
-            updateMovement();
-        }
-    });
+  window.addEventListener('keyup', (event) => {
+    if (['w', 's', 'a', 'd'].includes(event.key)) {
+      keyState[event.key] = false;
+      updateMovement();
+    }
+  });
 };
-
-
-// You should call this method after creating an instance of the Player class
-// For example:
-// var player = new Player(game);
-// player.setupKeyControls();
-
 
 Player.prototype.updatePosition = function(position, rotation) {
-    if (!this.bee) {
-        console.error('Bee object does not exist');
-        return;
-    }
-
-    // Update position
-    if (position) {
-        this.bee.position.set(position.x, position.y, position.z);
-    }
-
-    // Update rotation
-    if (rotation) {
-        this.bee.rotation.set(rotation.x, rotation.y, rotation.z);
-    }
+  if (!this.bee) {
+    console.error('Bee object does not exist');
+    return;
+  }
+  if (position) {
+    this.bee.position.set(position.x, position.y, position.z);
+  }
+  if (rotation) {
+    this.bee.rotation.set(rotation.x, rotation.y, rotation.z);
+  }
 };
+
 export { Player };

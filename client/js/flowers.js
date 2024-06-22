@@ -1,4 +1,4 @@
-import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 function getRandomColor() {
     const colors = [0xff0000, // Red
@@ -18,7 +18,7 @@ export function createFlowers(game, flowersData) {
     let minScale=2;
     let yPosition=0;
 
-    loader.load('./client/js/flower.glb', (gltf) => {
+    loader.load('./client/js/glb/flower.glb', (gltf) => {
         flowersData.forEach(flowerData => {
             // Clone the model
             const flower = gltf.scene.clone();

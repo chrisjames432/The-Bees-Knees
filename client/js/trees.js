@@ -1,4 +1,4 @@
-import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 
 function randomnumber(min, max) {
@@ -10,7 +10,7 @@ export function maketrees(game, numFlowers, yPosition) {
     let maxScale=80;
     let minScale=20;
 
-    loader.load('./client/js/PineTrees.glb', (gltf) => {
+    loader.load('./client/js/glb/PineTrees.glb', (gltf) => {
         for (let i = 0; i < numFlowers; i++) {
             // Clone the model
             const tree = gltf.scene.clone();

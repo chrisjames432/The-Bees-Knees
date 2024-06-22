@@ -8,97 +8,18 @@
     <meta http-equiv='cache-control' content='no-cache'>
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
-    <link rel="stylesheet" href="./client/maincss.css">
+    <link rel="stylesheet" href="./client/styles.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>   
     <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap" rel="stylesheet">
-
-
-<script src="/socket.io/socket.io.js"></script>
-
-
-<style>
-#infobox{
-
-min-width: 100px;
-position: fixed;
-top:0px;
-left:0px;
-z-index: 3
-
-}
-
-        .container-fluid{
-
-            max-width: 90%;;
-        }
-
-
-        #textarea{
-
-            font-family: 'Poppins', sans-serif;
-            max-width: 60%;
-        }
-
-        .center-text {
-    text-align: center;
-}
-
-
-
-  /* Add custom CSS for styling */
-  .hero-section {
-   
-      
-      text-align: center;
-      padding: 100px 0;
-    }
-
-    .hero-title {
-      font-size: 5rem;
-      margin-bottom: 50px;
-    }
-
-    .hero-text {
-      font-size: 1.5rem;
-      margin-bottom: 30px;
-    }
-
-    .start-button {
-      background-color: #ff6f61; /* Customize the button color */
-      color: #fff;
-      padding: 10px 20px;
-      font-size: 1.2rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-bottom: 50px;;
-      transition: background-color 0.3s ease;
-    }
-
-    .start-button:hover {
-      background-color: #e65348; /* Change button color on hover */
-    }
-    </style>
-
-
-
-
-
-
-
-
-
-
-
-    
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
+
 
 
 
@@ -148,7 +69,15 @@ z-index: 3
 <!-- Write your comments here ---------------------------------------------------------------------------------------->
 
 
- 
+<script type="importmap">
+  {
+      "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/",
+          "threemain/": "https://cdn.jsdelivr.net/npm/three@0.164.1/"
+      }
+  }
+</script>
 
 
     <script type="module">
