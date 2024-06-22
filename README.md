@@ -1,6 +1,3 @@
-Sure, here's the enhanced README with a polished description and TODO section:
-
----
 
 # BeeGame
 
