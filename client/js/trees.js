@@ -22,7 +22,7 @@ export function maketrees(game, numFlowers, yPosition) {
             const randomZPosition = randomnumber(-250, 250);
             tree.position.set(randomXPosition, yPosition, randomZPosition);
 
-            // Set random rotation
+            // Set random rotationwa
             const randomYRotation = Math.random() * Math.PI * 2; // Random rotation between 0 and 360 degrees
             tree.rotation.set(0, randomYRotation, 0);
 

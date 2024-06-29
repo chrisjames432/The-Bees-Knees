@@ -23,7 +23,7 @@ function randomnumber(min, max) {
 
 const minZValue = -50;
 const maxZValue = 50;
-var zvalue = -15;
+var zvalue = -55;   //sets the camera distance from player
 
 function calculateIdealOffset(model) {
   const idealOffset = new THREE.Vector3(-2, 2, zvalue);
@@ -65,7 +65,7 @@ function Player(game) {
   this.rotation = new THREE.Euler(); 
   this.bee = "";
   this.socket = game.socket;
-  this.camdistance = { x: 1.5, y: 25, z: 20 };
+  this.camdistance = { x: 1.5, y: 25, z: 25 };
   this.mixer = '';
   this.initialY = 5;
   this.randomdt = getRandomNumberWithTwoDecimals(2, 4);
@@ -79,7 +79,7 @@ Player.prototype.movePlayer = function (dt) {
     const move = this.move;
     const speed = 16;
     const moveSpeed = speed;
-    const turnSpeed = speed;
+    const turnSpeed = speed/20;
     const bee = this.bee;
 
     if (move) {
