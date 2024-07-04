@@ -1,0 +1,7 @@
+Develop and launch a THREEJS game featuring a little bee:
+What is the current status of the game?
+General outline and blueprint with node js server and threejs client, multiplayer functionality
+What features or elements are still needed to complete it?
+Scoring, maps, level design
+Do you need help with any specific aspect of game development (coding, design, testing, etc.)?
+Game mechanics, concepts
