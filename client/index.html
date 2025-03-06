@@ -39,6 +39,7 @@
 
   <div id="infobox">
     <h2 id="localplayer"></h2>
+    <h3 id="score">Score: 0</h3> <!-- Add score display -->
     <pre id="pre">
 
       
@@ -81,73 +82,50 @@
 
 
     <script type="module">
-
-
         import { game } from './client/js/game.js';
         import { Player } from './client/js/player.js';
         $(function () {
+            game.init();
+            window.game = game;
 
-
-        game.init();
-        window.game = game;
-
-    
-        var textarea = document.getElementById('textarea');
-        var startbutton = document.getElementById('startbutton');
-        var infobox = document.getElementById('infobox');
-        var localplayer = document.getElementById('localplayer');
-        var pre = document.getElementById('pre');
-        var playername = ''
-        
-        textarea.innerHTML=''
-        
-
-        game.socket.on('message', function (data) {
-              console.log(data);
-              var textNode = document.createTextNode(data.playerName); // Using data.playerName
-              textarea.appendChild(textNode);
-              playername = data.playerName; // Corrected to data.playerName
-              localplayer.innerHTML = playername;
-              game.makeflowers(data.flowers)
-              
-          });
-
-
-
-
-
-
-
-
-          startbutton.addEventListener('click',function(){
-
+            var textarea = document.getElementById('textarea');
+            var startbutton = document.getElementById('startbutton');
+            var infobox = document.getElementById('infobox');
+            var localplayer = document.getElementById('localplayer');
+            var pre = document.getElementById('pre');
+            var playername = '';
             
-            var titlescreen = document.getElementById('title-screen');
-            titlescreen.style.display = 'none';
+            textarea.innerHTML = '';
 
+            game.socket.on('message', function (data) {
+                console.log(data);
+                var textNode = document.createTextNode(data.playerName); // Using data.playerName
+                textarea.appendChild(textNode);
+                playername = data.playerName; // Corrected to data.playerName
+                localplayer.innerHTML = playername;
+                game.makeflowers(data.flowers);
+                updateScore(data.score); // Update score display
+            });
 
+            function updateScore(score) {
+                document.getElementById('score').innerText = `Score: ${score}`;
+            }
 
+            startbutton.addEventListener('click', function () {
+                var titlescreen = document.getElementById('title-screen');
+                titlescreen.style.display = 'none';
 
-            game.socket.on('playerlist',function(data){
-            
-            delete data[playername]
-            var jsonString = JSON.stringify(data, null, 2); // Convert JSON object to string with 2-space indentation
-            pre.textContent = jsonString;
-            game.managePlayers(data)
+                game.socket.on('playerlist', function (data) {
+                    delete data[playername];
+                    var jsonString = JSON.stringify(data, null, 2); // Convert JSON object to string with 2-space indentation
+                    pre.textContent = jsonString;
+                    game.managePlayers(data);
+                });
+            });
 
-
-            })
-
-
-
-
-
-
-          })
-
-
-     });
-
+            // Ensure updateScore is accessible globally
+            window.updateScore = updateScore;
+        });
     </script>
 
 

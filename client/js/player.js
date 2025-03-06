@@ -1,4 +1,3 @@
-
 // player.js
 
 console.log('threemain/examples/jsm/loaders/GLTFLoader.js')
@@ -23,7 +22,7 @@ function randomnumber(min, max) {
 
 const minZValue = -50;
 const maxZValue = 50;
-var zvalue = -55;   //sets the camera distance from player
+var zvalue = -10;   //sets the camera distance from player
 
 function calculateIdealOffset(model) {
   const idealOffset = new THREE.Vector3(-2, 2, zvalue);
@@ -65,13 +64,14 @@ function Player(game) {
   this.rotation = new THREE.Euler(); 
   this.bee = "";
   this.socket = game.socket;
-  this.camdistance = { x: 1.5, y: 25, z: 25 };
+  this.camdistance = { x: 1.5, y: 25, z: 10 };
   this.mixer = '';
-  this.initialY = 5;
+  this.initialY = 3;
   this.randomdt = getRandomNumberWithTwoDecimals(2, 4);
   this.local = false;
   this._currentPosition = new THREE.Vector3();
   this._currentLookat = new THREE.Vector3();
+  this.score = 0; // Add score property
 }
 
 Player.prototype.movePlayer = function (dt) {
@@ -155,7 +155,7 @@ Player.prototype.createPlayer = function (x, z, local = false) {
       this.local = true;
       var distance = this.camdistance;
       this.positionCamera(this.game.camera, gltf.scene, distance.x, distance.y, distance.z);
-      game.localplayer.setupKeyControls();
+      this.setupKeyControls();
       let localpl = this;
       this.joystick = new JoyStick({
         onMove: this.playerControl.bind(localpl),
@@ -177,11 +177,33 @@ Player.prototype.update = function (dt) {
   if (!!this.bee) {
     const oscillation = Math.sin(elapsedTime * animationSpeed) * animationHeight - 0.1;
     this.bee.position.y = this.initialY + oscillation - 0.1;
-    updateCamera(this, this.game.camera, this.bee, dt);
+    if (this.local) {
+      updateCamera(this, this.game.camera, this.bee, dt); // Only update camera for local player
+    }
+    if (game.flowers && game.flowers.length > 0) {
+      this.checkFlowerCollision(); // Check for flower collision
+    }
 
-    if (this.local) this.movePlayer(dt);
+    if (this.local) this.movePlayer(dt); // Only move local player
     if (this.mixer) { this.mixer.update(dt * this.randomdt); }
   }
+};
+
+Player.prototype.checkFlowerCollision = function() {
+  if (!this.bee) return;
+  const beeBox = new THREE.Box3().setFromObject(this.bee);
+  game.flowers.forEach((flower, index) => {
+    const flowerBox = new THREE.Box3().setFromObject(flower);
+    if (beeBox.intersectsBox(flowerBox)) {
+      game.scene.remove(flower);
+      game.flowers.splice(index, 1);
+      this.score++;
+      if (this.socket) {
+        this.sendPlayerData(); // Send updated score to server
+      }
+      updateScore(this.score); // Update score display on the client side
+    }
+  });
 };
 
 Player.prototype.positionCamera = function (camera, mesh, distanceX, distanceY, distanceZ) {
@@ -225,7 +247,8 @@ Player.prototype.sendPlayerData = function() {
       x: this.bee.rotation.x,
       y: this.bee.rotation.y,
       z: this.bee.rotation.z
-    }
+    },
+    score: this.score // Include score in player data
   };
   this.socket.emit('playerData', playerData);
 };
@@ -272,5 +295,9 @@ Player.prototype.updatePosition = function(position, rotation) {
     this.bee.rotation.set(rotation.x, rotation.y, rotation.z);
   }
 };
+
+function updateScore(score) {
+  document.getElementById('score').innerText = `Score: ${score}`;
+}
 
 export { Player };

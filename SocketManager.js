@@ -52,9 +52,9 @@ class SocketManager {
   initializeSocketEvents() {
     this.io.sockets.on('connection', (socket) => {
       const playerName = this.getNextPlayerId();
-      this.playerList[playerName] = {};
+      this.playerList[playerName] = { score: 0 }; // Initialize score
 
-      socket.emit('message', { playerName, loc: [0, 10, 10],flowers:flowerdata });
+      socket.emit('message', { playerName, loc: [0, 10, 10], flowers: flowerdata });
 
       socket.on('disconnect', () => {
         delete this.playerList[playerName];
@@ -64,7 +64,7 @@ class SocketManager {
 
       socket.on('playerData', (data) => {
         if (this.playerList[playerName] !== undefined) {
-          this.playerList[playerName] = data;
+          this.playerList[playerName] = { ...data, score: this.playerList[playerName].score }; // Preserve score
         }
       });
     });

@@ -21,6 +21,7 @@ game.three = THREE;
 game.animations = {};
 game.localplayer = new Player(game)
 game.remoteplayers = {};
+game.flowers = []; // Initialize flowers array
 //-----------------------------------------------------------------------------------------------
 
 game.init = function () {
@@ -57,7 +58,7 @@ game.init = function () {
   makegrass();
   
   trees.maketrees(game, 25, 0);
-  game.localplayer.createPlayer(5, 50, true);
+  game.localplayer.createPlayer(5, 50, true); // Ensure player is created
 
   $('#loading_div').delay(200).fadeOut(300);
   setcam(game.camera, 5, 5, 5);
@@ -75,6 +76,12 @@ game.init = function () {
 
 //-----------------------------------------------------------------------------------------------
 
+function updateScore(score) {
+  document.getElementById('score').innerText = `Score: ${score}`;
+}
+
+//-----------------------------------------------------------------------------------------------
+
 game.animate = function () {
   for (var key in game.animations) {
     if (typeof game.animations[key] === "function") { game.animations[key](); }
@@ -83,8 +90,11 @@ game.animate = function () {
   TWEENUpdate(); // Update all active tweens
   var dt = game.clock.getDelta();
 
-  game.localplayer.update(dt);
-  game.localplayer.sendPlayerData();
+  if (game.localplayer && game.localplayer.isloaded) {
+    game.localplayer.update(dt);
+    game.localplayer.sendPlayerData();
+    updateScore(game.localplayer.score); // Update score display
+  }
 
   game.forEachRemotePlayer((player, dt) => {
     player.update(dt);
@@ -93,6 +103,8 @@ game.animate = function () {
   game.renderscene();
   requestAnimationFrame(game.animate); 
 }
+
+//-----------------------------------------------------------------------------------------------
 
 game.makeflowers = function(data){
   flowers.createFlowers(game, data);

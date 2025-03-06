@@ -12,11 +12,12 @@ function getRandomColor() {
 function randomnumber(min, max) {
     return Math.random() * (max - min) + min;
 }
+
 export function createFlowers(game, flowersData) {
     const loader = new GLTFLoader();
-    let maxScale=8;
-    let minScale=2;
-    let yPosition=0;
+    let maxScale = 8;
+    let minScale = 2;
+    let yPosition = 0;
 
     loader.load('./client/js/glb/flower.glb', (gltf) => {
         flowersData.forEach(flowerData => {
@@ -46,6 +47,7 @@ export function createFlowers(game, flowersData) {
 
             // Add the flower to the scene
             game.scene.add(flower);
+            game.flowers.push(flower); // Store flower object
         });
     });
 }
