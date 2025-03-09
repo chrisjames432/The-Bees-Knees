@@ -7,6 +7,7 @@ import { Tween, Easing } from 'three/addons/libs/tween.module.min.js';
 import { AnimationMixer } from 'threemain/src/animation/AnimationMixer.js';
 import { game } from './game.js';
 import { JoyStick } from './joystick.js'; 
+import { audioManager } from './audio.js';
 
 function getRandomNumberWithTwoDecimals(x, y) {
   if (x > y) {
@@ -72,6 +73,7 @@ function Player(game) {
   this._currentPosition = new THREE.Vector3();
   this._currentLookat = new THREE.Vector3();
   this.score = 0; // Add score property
+  this.lastCollisionTime = 0;
 }
 
 Player.prototype.movePlayer = function (dt) {
@@ -85,14 +87,71 @@ Player.prototype.movePlayer = function (dt) {
     if (move) {
       const forwardMovement = move.forward * moveSpeed * dt;
       const turnMovement = move.turn * turnSpeed * dt;
-      const pos = bee.position.clone();
+      
+      // Store the current position before moving
+      const currentPosition = bee.position.clone();
+      
+      // Calculate the new position
+      const pos = currentPosition.clone();
       pos.x += Math.sin(bee.rotation.y) * forwardMovement;
       pos.z += Math.cos(bee.rotation.y) * forwardMovement;
+      
+      // Update bee position temporarily
       bee.position.copy(pos);
+      
+      // Check for tree collisions
+      if (this.checkTreeCollision()) {
+        // Collision detected, revert to previous position
+        bee.position.copy(currentPosition);
+        // Add slight bounce effect (optional)
+        if (this.lastCollisionTime === undefined || 
+            game.clock.getElapsedTime() - this.lastCollisionTime > 0.5) {
+          this.showCollisionFeedback();
+        }
+      }
+      
+      // Apply rotation regardless of collision
       bee.rotation.y += turnMovement;
     }
   }
 };
+
+Player.prototype.showCollisionFeedback = function() {
+  // Store collision time to prevent feedback spam
+  this.lastCollisionTime = game.clock.getElapsedTime();
+  
+  // Visual feedback - slight shake or flash
+  if (this.bee) {
+    // Create a short camera shake effect
+    const originalY = this.bee.position.y;
+    const shakeAmount = 0.2;
+    
+    // Simple shake animation using tweens
+    new Tween(this.bee.position)
+      .to({ y: originalY + shakeAmount }, 50)
+      .yoyo(true)
+      .repeat(3)
+      .start();
+      
+    // Send collision event to server
+    if (this.socket) {
+      this.socket.emit('treeCollision', { 
+        playerName: this.name,
+        position: {
+          x: this.bee.position.x,
+          y: this.bee.position.y,
+          z: this.bee.position.z
+        }
+      });
+    }
+    
+    // Play collision sound
+    audioManager.playSound('bump');
+  }
+};
+
+// Remove the old playCollisionSound method
+// Player.prototype.playCollisionSound = function() { ... }
 
 Player.prototype.playerControl = function (forward, turn) {
   if (forward < 0) {
@@ -139,7 +198,9 @@ Player.prototype.tweencam = function () {
 Player.prototype.createPlayer = function (x, z, local = false) {
   var loader = new GLTFLoader();
 
-  loader.load('./client/js/glb/beemodle.glb', (gltf) => {
+  // Use relative path without ./client prefix
+  loader.load('/client/js/glb/beemodle.glb', (gltf) => {
+    console.log('Bee model loaded successfully');
     const bee = gltf.scene;
     var e = 5;
     bee.scale.set(e, e, e);
@@ -149,13 +210,20 @@ Player.prototype.createPlayer = function (x, z, local = false) {
     this.animations = gltf.animations;
     this.bee = bee;
     this.isloaded = true;
-    this.playAnimation(['wing2Action.003', 'wing2.001Action']);
+    
+    try {
+      this.playAnimation(['wing2Action.003', 'wing2.001Action']);
+    } catch (e) {
+      console.error('Error playing animation:', e);
+    }
 
     if (local) {
       this.local = true;
+      this.cameraMode = 'third-person'; // Default camera mode
       var distance = this.camdistance;
       this.positionCamera(this.game.camera, gltf.scene, distance.x, distance.y, distance.z);
       this.setupKeyControls();
+      this.setupCameraToggle();
       let localpl = this;
       this.joystick = new JoyStick({
         onMove: this.playerControl.bind(localpl),
@@ -178,8 +246,20 @@ Player.prototype.update = function (dt) {
     const oscillation = Math.sin(elapsedTime * animationSpeed) * animationHeight - 0.1;
     this.bee.position.y = this.initialY + oscillation - 0.1;
     if (this.local) {
-      updateCamera(this, this.game.camera, this.bee, dt); // Only update camera for local player
+      if (this.cameraMode === 'third-person') {
+        updateCamera(this, this.game.camera, this.bee, dt); // Update camera for third-person view
+      } else {
+        // Top-down view - directly position camera
+        this.positionCamera(
+          this.game.camera,
+          this.bee,
+          this.camdistance.x,
+          this.camdistance.y,
+          this.camdistance.z
+        );
+      }
     }
+    
     if (game.flowers && game.flowers.length > 0) {
       this.checkFlowerCollision(); // Check for flower collision
     }
@@ -191,19 +271,154 @@ Player.prototype.update = function (dt) {
 
 Player.prototype.checkFlowerCollision = function() {
   if (!this.bee) return;
+  if (!game.flowers || !Array.isArray(game.flowers)) {
+    console.warn('Flowers array is not properly initialized');
+    return;
+  }
+  
   const beeBox = new THREE.Box3().setFromObject(this.bee);
-  game.flowers.forEach((flower, index) => {
+  
+  // Use for loop in reverse to safely handle array splicing
+  for (let i = game.flowers.length - 1; i >= 0; i--) {
+    const flower = game.flowers[i];
+    if (!flower) continue;
+    
     const flowerBox = new THREE.Box3().setFromObject(flower);
     if (beeBox.intersectsBox(flowerBox)) {
       game.scene.remove(flower);
-      game.flowers.splice(index, 1);
+      game.flowers.splice(i, 1);
       this.score++;
+      
       if (this.socket) {
+        this.socket.emit('flowerCollected', { index: i });
         this.sendPlayerData(); // Send updated score to server
       }
+      
       updateScore(this.score); // Update score display on the client side
     }
-  });
+  }
+};
+
+Player.prototype.checkTreeCollision = function() {
+    if (!this.bee || !game.trees || !Array.isArray(game.trees)) return false;
+    
+    // Get bee position for distance calculations
+    const beePosition = new THREE.Vector3();
+    this.bee.getWorldPosition(beePosition);
+    
+    // Create a tighter bounding sphere for the bee
+    const beeRadius = 1.0; // Approximate radius of the bee's body
+    
+    let collided = false;
+    let collisionTree = null;
+    let collisionPoint = null;
+    
+    for (let i = 0; i < game.trees.length; i++) {
+        const tree = game.trees[i];
+        // Skip invalid trees
+        if (!tree || !tree.userData) continue;
+        
+        // Get tree position
+        const treePosition = new THREE.Vector3();
+        tree.getWorldPosition(treePosition);
+        
+        // Calculate rough distance between bee and tree for quick rejection test
+        const roughDistance = beePosition.distanceTo(treePosition);
+        
+        // Get tree collision data
+        let collisionData = tree.userData.collisionData;
+        
+        if (!collisionData || !collisionData.shapes || collisionData.shapes.length === 0) {
+            // Fallback if proper collision data is missing
+            const defaultRadius = 2.0;
+            if (roughDistance < defaultRadius + beeRadius) {
+                collided = true;
+                collisionTree = tree;
+                break;
+            }
+            continue;
+        }
+        
+        // Quick rejection test based on bounds
+        if (collisionData.bounds) {
+            const maxBoundsRadius = Math.max(collisionData.bounds.width, collisionData.bounds.depth) / 2;
+            if (roughDistance > maxBoundsRadius + beeRadius + 2) { // Add some margin
+                continue; // Tree is too far away for collision
+            }
+        }
+        
+        // Check each collision shape of this tree
+        for (const shape of collisionData.shapes) {
+            if (shape.type === 'cylinder') {
+                // Calculate the shape's world position
+                const shapePosition = new THREE.Vector3().copy(shape.position);
+                shapePosition.applyMatrix4(tree.matrixWorld);
+                
+                // Calculate horizontal distance only (ignore Y)
+                const horizontalDistanceVector = new THREE.Vector3(
+                    beePosition.x - shapePosition.x,
+                    0,
+                    beePosition.z - shapePosition.z
+                );
+                
+                const horizontalDistance = horizontalDistanceVector.length();
+                
+                // If horizontal distance is less than cylinder radius + bee radius, we have a collision
+                if (horizontalDistance < shape.radius + beeRadius) {
+                    collided = true;
+                    collisionTree = tree;
+                    collisionPoint = shapePosition;
+                    
+                    // Debug visualization if needed
+                    if (this.local && game.debugMode) {
+                        this.visualizeCollision(shapePosition, shape.radius);
+                    }
+                    
+                    break; // No need to check other shapes once we found a collision
+                }
+            }
+        }
+        
+        if (collided) break; // Exit loop once collision is found
+    }
+    
+    // If collided and we're the local player, calculate bounce direction for more realistic collision response
+    if (collided && this.local && collisionPoint) {
+        this.lastCollisionDirection = new THREE.Vector3(
+            beePosition.x - collisionPoint.x,
+            0,
+            beePosition.z - collisionPoint.z
+        ).normalize();
+    }
+    
+    return collided;
+};
+
+// Enhanced visualization to show all collision shapes of trees
+Player.prototype.visualizeCollision = function(position, radius) {
+    // Check if we already have a debug cylinder
+    if (!this.debugCylinder) {
+        const geometry = new THREE.CylinderGeometry(1, 1, 20, 16);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.5
+        });
+        this.debugCylinder = new THREE.Mesh(geometry, material);
+        game.scene.add(this.debugCylinder);
+    }
+    
+    // Update the cylinder position and scale
+    this.debugCylinder.position.copy(position);
+    this.debugCylinder.scale.set(radius, 1, radius);
+    this.debugCylinder.visible = true;
+    
+    // Hide the debug cylinder after a short time
+    clearTimeout(this.debugTimer);
+    this.debugTimer = setTimeout(() => {
+        if (this.debugCylinder) this.debugCylinder.visible = false;
+    }, 1000);
 };
 
 Player.prototype.positionCamera = function (camera, mesh, distanceX, distanceY, distanceZ) {
@@ -219,7 +434,6 @@ Player.prototype.playAnimation = function (names) {
     console.error('this.animations is not an array:', this.animations);
     return;
   }
-
   names.forEach(name => {
     const clip = this.animations.find(anim => anim.name === name);
     if (clip) {
@@ -281,6 +495,40 @@ Player.prototype.setupKeyControls = function () {
       updateMovement();
     }
   });
+};
+
+Player.prototype.setupCameraToggle = function() {
+  const cameraToggleBtn = document.getElementById('camera-toggle-btn');
+  if (cameraToggleBtn) {
+    cameraToggleBtn.addEventListener('click', () => {
+      this.toggleCameraView();
+    });
+  }
+};
+
+Player.prototype.toggleCameraView = function() {
+  if (this.cameraMode === 'third-person') {
+    // Switch to top-down view
+    this.cameraMode = 'top-down';
+    this.camdistance = { x: 0, y: 50, z: 0 }; // Higher y, zero x and z for top-down
+    console.log('Switched to top-down view');
+  } else {
+    // Switch back to third-person view
+    this.cameraMode = 'third-person';
+    this.camdistance = { x: 1.5, y: 25, z: 10 }; // Original third-person camera values
+    console.log('Switched to third-person view');
+  }
+  
+  // Update camera position immediately
+  if (this.bee) {
+    this.positionCamera(
+      this.game.camera, 
+      this.bee, 
+      this.camdistance.x, 
+      this.camdistance.y, 
+      this.camdistance.z
+    );
+  }
 };
 
 Player.prototype.updatePosition = function(position, rotation) {

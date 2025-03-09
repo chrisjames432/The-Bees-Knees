@@ -1,6 +1,7 @@
 console.log('game.js loaded')
 import * as THREE from 'three';
 import { Tween, Easing, update as TWEENUpdate } from 'three/addons/libs/tween.module.min.js';
+import { audioManager } from './audio.js';
 
 import { Player } from './player.js';
 import * as flowers from './flowers.js'; 
@@ -16,12 +17,16 @@ function setcam(camera, distanceX, distanceY, distanceZ) {
 };
 
 var game = {};
-game.socket = io();
+// Use window location for dynamic socket connection
+game.socket = io.connect(window.location.origin);
+console.log('Connecting to socket at:', window.location.origin);
 game.three = THREE;
 game.animations = {};
 game.localplayer = new Player(game)
 game.remoteplayers = {};
 game.flowers = []; // Initialize flowers array
+game.trees = []; // Initialize trees array
+game.debugMode = false; // Add debug mode flag (can be toggled with key)
 //-----------------------------------------------------------------------------------------------
 
 game.init = function () {
@@ -57,7 +62,6 @@ game.init = function () {
 
   makegrass();
   
-  trees.maketrees(game, 25, 0);
   game.localplayer.createPlayer(5, 50, true); // Ensure player is created
 
   $('#loading_div').delay(200).fadeOut(300);
@@ -69,6 +73,32 @@ game.init = function () {
     game.camera.updateProjectionMatrix();
     game.renderer.setSize(window.innerWidth, window.innerHeight);
   }, false);
+
+  // Initialize audio
+  audioManager.init();
+  
+  // Play background sound when user starts the game
+  document.getElementById('startbutton').addEventListener('click', function() {
+    audioManager.playBackground();
+  }, { once: true });
+  
+  // Add audio controls event listener
+  window.addEventListener('keydown', function(event) {
+    if (event.key === 'b') { // 'b' for debug
+      game.debugMode = !game.debugMode;
+      console.log('Debug mode:', game.debugMode ? 'enabled' : 'disabled');
+      
+      // When debug mode is enabled, show all tree collision radiuses
+      if (game.debugMode) {
+        showTreeCollisionBoundaries(game);
+      } else {
+        hideTreeCollisionBoundaries(game);
+      }
+    } else if (event.key === 'm') { // 'm' for mute
+      const muted = audioManager.toggleMute();
+      console.log('Audio:', muted ? 'muted' : 'unmuted');
+    }
+  });
 
   game.animate();
   $('#loading_div').delay(200).fadeOut(300);
@@ -107,7 +137,16 @@ game.animate = function () {
 //-----------------------------------------------------------------------------------------------
 
 game.makeflowers = function(data){
+  console.log("Creating flowers:", data ? data.length : 0);
   flowers.createFlowers(game, data);
+}
+
+//-----------------------------------------------------------------------------------------------
+
+// Update the maketrees function to specify we're now using the new tree models
+game.maketrees = function(data){
+  console.log("Creating trees with new tree models:", data ? data.length : 0);
+  trees.createTrees(game, data);
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -191,5 +230,109 @@ game.removePlayer = function(playerName) {
 game.socket.on('playerDisconnected', function(playerName) {
   game.removePlayer(playerName);
 });
+
+game.socket.on('flowerCollected', function(data) {
+  const flower = game.flowers[data.index];
+  if (flower) {
+    game.scene.remove(flower);
+    game.flowers.splice(data.index, 1);
+  }
+});
+
+game.socket.on('treeCollision', function(data) {
+  if (data.playerName === game.localplayer.name) {
+    // Handle tree collision for local player - already handled in player.js
+  } else {
+    // Handle remote player collisions
+    const remotePlayer = game.remoteplayers[data.playerName];
+    if (remotePlayer && remotePlayer.isloaded) {
+      // Make remote player show collision effect too
+      remotePlayer.showCollisionFeedback();
+    }
+  }
+});
+
+game.socket.on('message', function (data) {
+  console.log("Received data from server:", data);
+  if (data.flowers && Array.isArray(data.flowers)) {
+    game.makeflowers(data.flowers);
+    console.log(`Processed ${data.flowers.length} flowers`);
+  }
+  if (data.trees && Array.isArray(data.trees)) {
+    game.maketrees(data.trees);
+    console.log(`Processed ${data.trees.length} trees`);
+  }
+});
+
+// New functions for visualizing tree collisions in debug mode
+function showTreeCollisionBoundaries(game) {
+    if (!game.collisionHelpers) {
+        game.collisionHelpers = [];
+    }
+    
+    // Remove existing helpers
+    hideTreeCollisionBoundaries(game);
+    
+    // Create helpers for each tree's collision shapes
+    game.trees.forEach((tree, index) => {
+        if (!tree || !tree.userData || !tree.userData.collisionData) return;
+        
+        const collisionData = tree.userData.collisionData;
+        
+        if (collisionData.shapes && Array.isArray(collisionData.shapes)) {
+            collisionData.shapes.forEach((shape) => {
+                if (shape.type === 'cylinder') {
+                    // Create a cylinder to visualize this collision shape
+                    const geometry = new THREE.CylinderGeometry(shape.radius, shape.radius, shape.height, 16);
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0xff0000,
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.35
+                    });
+                    
+                    const helper = new THREE.Mesh(geometry, material);
+                    
+                    // Position this helper at the shape's position relative to the tree
+                    const shapePosition = new THREE.Vector3().copy(shape.position);
+                    shapePosition.applyMatrix4(tree.matrixWorld);
+                    helper.position.copy(shapePosition);
+                    
+                    game.scene.add(helper);
+                    game.collisionHelpers.push(helper);
+                }
+            });
+        } else {
+            // Fallback if detailed collision shapes aren't available
+            const defaultRadius = tree.userData.collisionRadius || 2.0;
+            const geometry = new THREE.CylinderGeometry(defaultRadius, defaultRadius, 10, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xff8800, // Different color for default shapes
+                wireframe: true,
+                transparent: true,
+                opacity: 0.35
+            });
+            
+            const helper = new THREE.Mesh(geometry, material);
+            helper.position.copy(tree.position);
+            helper.position.y = 5; // Position at middle height of cylinder
+            
+            game.scene.add(helper);
+            game.collisionHelpers.push(helper);
+        }
+    });
+    
+    console.log(`Created ${game.collisionHelpers.length} collision visualizers for ${game.trees.length} trees`);
+}
+
+function hideTreeCollisionBoundaries(game) {
+  if (game.collisionHelpers && game.collisionHelpers.length > 0) {
+    game.collisionHelpers.forEach(helper => {
+      game.scene.remove(helper);
+    });
+    
+    game.collisionHelpers = [];
+  }
+}
 
 export { game }

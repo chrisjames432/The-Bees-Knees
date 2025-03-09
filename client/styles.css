@@ -144,3 +144,59 @@ h1, h2, h3 {
 .start-button:hover {
   background-color: #e65348; /* Change button color on hover */
 }
+
+/* Camera toggle button styling */
+.camera-toggle {
+  position: absolute;
+  bottom: 45px;
+  right: 35px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(126, 126, 126, 0.5);
+  border: medium solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background-color 0.3s ease;
+}
+
+.camera-toggle:hover {
+  background: rgba(150, 150, 150, 0.7);
+}
+
+.camera-toggle span {
+  font-size: 24px;
+  color: white;
+  user-select: none;
+}
+
+/* Audio toggle button styling */
+.audio-toggle {
+  position: absolute;
+  bottom: 45px;
+  right: 105px; /* Position to the left of the camera toggle button */
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(126, 126, 126, 0.5);
+  border: medium solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background-color 0.3s ease;
+}
+
+.audio-toggle:hover {
+  background: rgba(150, 150, 150, 0.7);
+}
+
+.audio-toggle span {
+  font-size: 24px;
+  color: white;
+  user-select: none;
+}

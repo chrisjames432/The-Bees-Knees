@@ -37,9 +37,10 @@
 <!-- Write your comments here ---------------------------------------------------------------------------------------->
 
 
-  <div id="infobox">
+  <div id="infobox" class="p-5">
     <h2 id="localplayer"></h2>
     <h3 id="score">Score: 0</h3> <!-- Add score display -->
+    <h4 id="connection-status" style="color: red;">Disconnected</h4> <!-- Add connection status -->
     <pre id="pre">
 
       
@@ -49,7 +50,16 @@
 
     <div id="mainscene" class="scene">
 
-
+    </div>
+    
+    <!-- Camera toggle button -->
+    <div id="camera-toggle-btn" class="camera-toggle">
+      <span>🔄</span>
+    </div>
+    
+    <!-- Audio control button -->
+    <div id="audio-toggle-btn" class="audio-toggle">
+      <span>🔊</span>
     </div>
 
 
@@ -84,7 +94,41 @@
     <script type="module">
         import { game } from './client/js/game.js';
         import { Player } from './client/js/player.js';
+        import { checkGLBFile } from './client/js/debug.js';
+        import { audioManager } from './client/js/audio.js';
+        
         $(function () {
+            // Check if GLB files exist
+            checkGLBFile('./client/js/glb/flower.glb', (exists, size) => {
+                console.log('Flower GLB file check:', exists ? 'Found' : 'Not found', size ? `(${size} bytes)` : '');
+            });
+            
+            checkGLBFile('./client/js/glb/PineTrees.glb', (exists, size) => {
+                console.log('Pine Trees GLB file check:', exists ? 'Found' : 'Not found', size ? `(${size} bytes)` : '');
+            });
+            
+            checkGLBFile('./client/js/glb/beemodle.glb', (exists, size) => {
+                console.log('Bee model GLB file check:', exists ? 'Found' : 'Not found', size ? `(${size} bytes)` : '');
+            });
+            
+            // Show connection status
+            const connectionStatus = document.getElementById('connection-status');
+            game.socket.on('connect', function() {
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.style.color = 'green';
+            });
+            
+            game.socket.on('disconnect', function() {
+                connectionStatus.textContent = 'Disconnected';
+                connectionStatus.style.color = 'red';
+            });
+            
+            game.socket.on('connect_error', function(error) {
+                connectionStatus.textContent = 'Connection Error: ' + error;
+                connectionStatus.style.color = 'red';
+                console.error('Socket connection error:', error);
+            });
+            
             game.init();
             window.game = game;
 
@@ -104,6 +148,7 @@
                 playername = data.playerName; // Corrected to data.playerName
                 localplayer.innerHTML = playername;
                 game.makeflowers(data.flowers);
+                game.maketrees(data.trees);
                 updateScore(data.score); // Update score display
             });
 
@@ -125,6 +170,15 @@
 
             // Ensure updateScore is accessible globally
             window.updateScore = updateScore;
+
+            // Add audio control functionality
+            const audioBtn = document.getElementById('audio-toggle-btn');
+            if (audioBtn) {
+                audioBtn.addEventListener('click', function() {
+                    const muted = audioManager.toggleMute();
+                    audioBtn.querySelector('span').textContent = muted ? '🔇' : '🔊';
+                });
+            }
         });
     </script>
 

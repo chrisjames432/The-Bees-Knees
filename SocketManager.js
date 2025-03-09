@@ -1,3 +1,5 @@
+const THREE = require('three');
+
 function getRandomColor() {
   const colors = [0xff0000, 0x0000ff, 0x800080, 0xffffff];
   const randomIndex = Math.floor(Math.random() * colors.length);
@@ -25,15 +27,36 @@ function generateFlowersData(numFlowers) {
   return flowers;
 }
 
+// Function to generate tree data
+function generateTreesData(numTrees) {
+  const trees = [];
+  for (let i = 0; i < numTrees; i++) {
+      const tree = {
+          position: {
+              x: Math.random() * 500 - 250, // Example range (-250 to 250)
+              y: -1, // Set y position as needed
+              z: Math.random() * 500 - 250, // Example range (-250 to 250)
+          },
+          rotation: {
+              y: Math.random() * Math.PI * 2, // Random rotation between 0 and 360 degrees
+          },
+          scale: Math.random() * (80 - 20) + 20, // Random scale between 20 and 80
+      };
+      trees.push(tree);
+  }
+  return trees;
+}
 
-const flowerdata = generateFlowersData(1000)
-
-
+// Generate fewer objects for better performance during testing
+const flowerdata = generateFlowersData(50);
+const treedata = generateTreesData(10);
 
 class SocketManager {
   constructor(io) {
     this.io = io;
     this.playerList = {};
+    this.flowers = flowerdata;
+    this.trees = treedata;
     this.initializeSocketEvents();
     this.setupBroadcast();
   }
@@ -45,7 +68,6 @@ class SocketManager {
   setupBroadcast() {
     setInterval(() => {
       this.io.sockets.emit('playerlist', this.playerList);
-      console.log(this.playerList)
     }, 1000 / 60);
   }
 
@@ -54,7 +76,16 @@ class SocketManager {
       const playerName = this.getNextPlayerId();
       this.playerList[playerName] = { score: 0 }; // Initialize score
 
-      socket.emit('message', { playerName, loc: [0, 10, 10], flowers: flowerdata });
+      // Send initial data with flowers and trees
+      socket.emit('message', { 
+        playerName, 
+        loc: [0, 10, 10], 
+        flowers: this.flowers, 
+        trees: this.trees,
+        score: 0
+      });
+      
+      console.log(`${playerName} joined. Sent ${this.flowers.length} flowers and ${this.trees.length} trees.`);
 
       socket.on('disconnect', () => {
         delete this.playerList[playerName];
@@ -64,7 +95,18 @@ class SocketManager {
 
       socket.on('playerData', (data) => {
         if (this.playerList[playerName] !== undefined) {
-          this.playerList[playerName] = { ...data, score: this.playerList[playerName].score }; // Preserve score
+          this.playerList[playerName] = { 
+            position: data.position,
+            rotation: data.rotation,
+            score: data.score || 0
+          };
+        }
+      });
+
+      socket.on('flowerCollected', (data) => {
+        if (data && data.index >= 0 && data.index < this.flowers.length) {
+          this.flowers.splice(data.index, 1);
+          socket.broadcast.emit('flowerCollected', data);
         }
       });
     });
