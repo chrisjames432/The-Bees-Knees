@@ -13,13 +13,13 @@ function generateFlowersData(numFlowers) {
       const flower = {
           position: {
               x: Math.random() * 200 - 100, // Example range (-100 to 100)
-              y: 0, // Set y position as needed
+              y: -2, // Set y position as needed
               z: Math.random() * 200 - 100, // Example range (-100 to 100)
           },
           rotation: {
               y: Math.random() * Math.PI * 2, // Random rotation between 0 and 360 degrees
           },
-          scale: Math.random() * (10 - 4) + 2, // Random scale between 2 and 8
+          scale: 15, // Larger fixed scale
           color: getRandomColor(), // Implement getRandomColor function
       };
       flowers.push(flower);
@@ -47,9 +47,9 @@ function generateTreesData(numTrees) {
   return trees;
 }
 
-// Generate fewer objects for better performance during testing
-const flowerdata = generateFlowersData(50);
-const treedata = generateTreesData(10);
+// Generate more flowers and trees
+const flowerdata = generateFlowersData(200);
+const treedata = generateTreesData(50);
 
 class SocketManager {
   constructor(io) {

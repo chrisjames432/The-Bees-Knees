@@ -8,6 +8,7 @@ import { AnimationMixer } from 'threemain/src/animation/AnimationMixer.js';
 import { game } from './game.js';
 import { JoyStick } from './joystick.js'; 
 import { audioManager } from './audio.js';
+import { createParticleTexture } from './particleHelper.js';
 
 function getRandomNumberWithTwoDecimals(x, y) {
   if (x > y) {
@@ -88,29 +89,15 @@ Player.prototype.movePlayer = function (dt) {
       const forwardMovement = move.forward * moveSpeed * dt;
       const turnMovement = move.turn * turnSpeed * dt;
       
-      // Store the current position before moving
-      const currentPosition = bee.position.clone();
-      
       // Calculate the new position
-      const pos = currentPosition.clone();
+      const pos = bee.position.clone();
       pos.x += Math.sin(bee.rotation.y) * forwardMovement;
       pos.z += Math.cos(bee.rotation.y) * forwardMovement;
       
-      // Update bee position temporarily
+      // Update bee position directly - no collision check
       bee.position.copy(pos);
       
-      // Check for tree collisions
-      if (this.checkTreeCollision()) {
-        // Collision detected, revert to previous position
-        bee.position.copy(currentPosition);
-        // Add slight bounce effect (optional)
-        if (this.lastCollisionTime === undefined || 
-            game.clock.getElapsedTime() - this.lastCollisionTime > 0.5) {
-          this.showCollisionFeedback();
-        }
-      }
-      
-      // Apply rotation regardless of collision
+      // Apply rotation
       bee.rotation.y += turnMovement;
     }
   }
@@ -285,6 +272,12 @@ Player.prototype.checkFlowerCollision = function() {
     
     const flowerBox = new THREE.Box3().setFromObject(flower);
     if (beeBox.intersectsBox(flowerBox)) {
+      // Create particle effect at flower position before removing it
+      this.createFlowerCollectionEffect(flower);
+      
+      // Play collection sound
+      audioManager.playSound('bump');
+      
       game.scene.remove(flower);
       game.flowers.splice(i, 1);
       this.score++;
@@ -299,126 +292,142 @@ Player.prototype.checkFlowerCollision = function() {
   }
 };
 
-Player.prototype.checkTreeCollision = function() {
-    if (!this.bee || !game.trees || !Array.isArray(game.trees)) return false;
+Player.prototype.createFlowerCollectionEffect = function(flower) {
+  // Get the flower's position and color for the particle effect
+  const flowerPosition = flower.position.clone();
+  
+  // Ensure the particles appear above ground
+  flowerPosition.y += 5; // Raise the position to be more visible
+  
+  // Try to find the flower's color
+  let flowerColor = 0xffff00; // Default yellow if color can't be determined
+  flower.traverse(function(child) {
+    if (child.isMesh && child.material && child.material.color) {
+      flowerColor = child.material.color.getHex();
+      return;
+    }
+  });
+  
+  // Try to load particle texture from correct path
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load('/client/images/particle.png', 
+    // Success callback - texture loaded successfully
+    (texture) => {
+      createParticlesWithTexture(texture);
+    },
+    // Progress callback
+    undefined,
+    // Error callback - use generated texture instead
+    (error) => {
+      console.warn('Could not load particle texture, using generated one instead:', error);
+      createParticlesWithTexture(createParticleTexture());
+    }
+  );
+  
+  // Function to create particles with the given texture
+  const createParticlesWithTexture = (texture) => {
+    // Create particles
+    const particleCount = 25; // More particles
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const colors = [];
     
-    // Get bee position for distance calculations
-    const beePosition = new THREE.Vector3();
-    this.bee.getWorldPosition(beePosition);
+    // Convert hex color to RGB components
+    const color = new THREE.Color(flowerColor);
     
-    // Create a tighter bounding sphere for the bee
-    const beeRadius = 1.0; // Approximate radius of the bee's body
-    
-    let collided = false;
-    let collisionTree = null;
-    let collisionPoint = null;
-    
-    for (let i = 0; i < game.trees.length; i++) {
-        const tree = game.trees[i];
-        // Skip invalid trees
-        if (!tree || !tree.userData) continue;
-        
-        // Get tree position
-        const treePosition = new THREE.Vector3();
-        tree.getWorldPosition(treePosition);
-        
-        // Calculate rough distance between bee and tree for quick rejection test
-        const roughDistance = beePosition.distanceTo(treePosition);
-        
-        // Get tree collision data
-        let collisionData = tree.userData.collisionData;
-        
-        if (!collisionData || !collisionData.shapes || collisionData.shapes.length === 0) {
-            // Fallback if proper collision data is missing
-            const defaultRadius = 2.0;
-            if (roughDistance < defaultRadius + beeRadius) {
-                collided = true;
-                collisionTree = tree;
-                break;
-            }
-            continue;
-        }
-        
-        // Quick rejection test based on bounds
-        if (collisionData.bounds) {
-            const maxBoundsRadius = Math.max(collisionData.bounds.width, collisionData.bounds.depth) / 2;
-            if (roughDistance > maxBoundsRadius + beeRadius + 2) { // Add some margin
-                continue; // Tree is too far away for collision
-            }
-        }
-        
-        // Check each collision shape of this tree
-        for (const shape of collisionData.shapes) {
-            if (shape.type === 'cylinder') {
-                // Calculate the shape's world position
-                const shapePosition = new THREE.Vector3().copy(shape.position);
-                shapePosition.applyMatrix4(tree.matrixWorld);
-                
-                // Calculate horizontal distance only (ignore Y)
-                const horizontalDistanceVector = new THREE.Vector3(
-                    beePosition.x - shapePosition.x,
-                    0,
-                    beePosition.z - shapePosition.z
-                );
-                
-                const horizontalDistance = horizontalDistanceVector.length();
-                
-                // If horizontal distance is less than cylinder radius + bee radius, we have a collision
-                if (horizontalDistance < shape.radius + beeRadius) {
-                    collided = true;
-                    collisionTree = tree;
-                    collisionPoint = shapePosition;
-                    
-                    // Debug visualization if needed
-                    if (this.local && game.debugMode) {
-                        this.visualizeCollision(shapePosition, shape.radius);
-                    }
-                    
-                    break; // No need to check other shapes once we found a collision
-                }
-            }
-        }
-        
-        if (collided) break; // Exit loop once collision is found
+    // Create particles in a sphere around the flower position
+    for (let i = 0; i < particleCount; i++) {
+      // Random position in a sphere
+      const radius = 3; // Larger radius around the flower
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+      
+      positions.push(
+        flowerPosition.x + x,
+        flowerPosition.y + y,
+        flowerPosition.z + z
+      );
+      
+      // Use the flower's color with some variation
+      colors.push(
+        color.r,
+        color.g,
+        color.b
+      );
     }
     
-    // If collided and we're the local player, calculate bounce direction for more realistic collision response
-    if (collided && this.local && collisionPoint) {
-        this.lastCollisionDirection = new THREE.Vector3(
-            beePosition.x - collisionPoint.x,
-            0,
-            beePosition.z - collisionPoint.z
-        ).normalize();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    
+    // Material for the particles - much larger size
+    const material = new THREE.PointsMaterial({
+      size: 0.25, // Even larger size to be very visible
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.25,
+      depthTest: false, // Make sure particles are always visible
+      sizeAttenuation: true, // Scale with distance
+      blending: THREE.AdditiveBlending, // Bright additive blending
+      map: texture // Use provided texture
+    });
+    
+    // Create the particle system
+    const particles = new THREE.Points(geometry, material);
+    game.scene.add(particles);
+    
+    // Debug log
+    console.log(`Created particle effect at: ${flowerPosition.x}, ${flowerPosition.y}, ${flowerPosition.z}`);
+    
+    // Animate the particles
+    const startTime = Date.now();
+    const duration = 1500; // 1.5 seconds animation
+    
+    // Store original positions for animation
+    const originalPositions = positions.slice();
+    
+    function animateParticles() {
+      const elapsedTime = Date.now() - startTime;
+      const progress = Math.min(elapsedTime / duration, 1.0);
+      
+      // Update particle positions (expand outward)
+      const positions = geometry.attributes.position.array;
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        
+        // More dramatic movement - particles fly outward and upward
+        const moveFactor = 10 * progress;
+        positions[i3] = originalPositions[i3] + (Math.random() * 2 - 1) * moveFactor;
+        positions[i3 + 1] = originalPositions[i3 + 1] + progress * 15; // Strong upward motion
+        positions[i3 + 2] = originalPositions[i3 + 2] + (Math.random() * 2 - 1) * moveFactor;
+      }
+      
+      geometry.attributes.position.needsUpdate = true;
+      
+      // Fade out particles as they disperse
+      material.opacity = 1.0 - progress;
+      
+      if (progress < 1.0) {
+        requestAnimationFrame(animateParticles);
+      } else {
+        // Remove particles when animation is complete
+        game.scene.remove(particles);
+        geometry.dispose();
+        material.dispose();
+      }
     }
     
-    return collided;
+    // Start the animation
+    animateParticles();
+  };
 };
 
-// Enhanced visualization to show all collision shapes of trees
-Player.prototype.visualizeCollision = function(position, radius) {
-    // Check if we already have a debug cylinder
-    if (!this.debugCylinder) {
-        const geometry = new THREE.CylinderGeometry(1, 1, 20, 16);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0xff0000,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.5
-        });
-        this.debugCylinder = new THREE.Mesh(geometry, material);
-        game.scene.add(this.debugCylinder);
-    }
-    
-    // Update the cylinder position and scale
-    this.debugCylinder.position.copy(position);
-    this.debugCylinder.scale.set(radius, 1, radius);
-    this.debugCylinder.visible = true;
-    
-    // Hide the debug cylinder after a short time
-    clearTimeout(this.debugTimer);
-    this.debugTimer = setTimeout(() => {
-        if (this.debugCylinder) this.debugCylinder.visible = false;
-    }, 1000);
+Player.prototype.checkTreeCollision = function() {
+  // Always return false - collision detection disabled
+  return false;
 };
 
 Player.prototype.positionCamera = function (camera, mesh, distanceX, distanceY, distanceZ) {

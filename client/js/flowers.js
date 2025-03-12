@@ -22,8 +22,6 @@ export function createFlowers(game, flowersData) {
     console.log(`Starting to create ${flowersData.length} flowers`);
     
     const loader = new GLTFLoader();
-    let maxScale = 8;
-    let minScale = 2;
     let yPosition = 0;
 
     // Use relative path without ./client prefix
@@ -90,8 +88,8 @@ export function createFlowers(game, flowersData) {
                     // Set rotation from server data
                     flower.rotation.set(0, flowerData.rotation.y || 0, 0);
 
-                    // Set scale from server data
-                    const scale = flowerData.scale || 5;
+                    // Set larger fixed scale
+                    const scale = 20;
                     flower.scale.set(scale, scale, scale);
 
                     // Add the flower to the scene
