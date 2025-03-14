@@ -189,17 +189,40 @@ game.positionCamera = function(camera, mesh, distanceX, distanceY, distanceZ) {
 let x = 0;
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 game.managePlayers = function(playerData) {
+  console.log("Managing players:", playerData);
+  
+  // First, identify players that have been removed
+  const currentPlayerNames = Object.keys(playerData);
+  for (let playerName in this.remoteplayers) {
+    if (!currentPlayerNames.includes(playerName)) {
+      this.removePlayer(playerName);
+    }
+  }
+  
+  // Now update or add players
   for (let playerName in playerData) {
     if (playerData.hasOwnProperty(playerName)) {
       let playerInfo = playerData[playerName];
+      
+      // Skip if this is the local player
+      if (this.localplayer && this.localplayer.name === playerName) {
+        continue;
+      }
+      
       if (this.remoteplayers[playerName]) {
         if (this.remoteplayers[playerName].isloaded) {
           this.remoteplayers[playerName].updatePosition(playerInfo.position, playerInfo.rotation);
         }
       } else {
-        let newPlayer = new Player(game);
-        newPlayer.createPlayer(5, 5 + x);
-        x += 3;
+        console.log(`Creating new remote player: ${playerName}`);
+        let newPlayer = new Player(this);
+        newPlayer.name = playerName; // Set the player name
+        
+        // Position the player at their actual position if available
+        const initialX = playerInfo.position ? playerInfo.position.x : 5;
+        const initialZ = playerInfo.position ? playerInfo.position.z : 5;
+        
+        newPlayer.createPlayer(initialX, initialZ);
         this.remoteplayers[playerName] = newPlayer;
       }
     }

@@ -75,6 +75,7 @@ function Player(game) {
   this._currentLookat = new THREE.Vector3();
   this.score = 0; // Add score property
   this.lastCollisionTime = 0;
+  this.name = ""; // Add explicit name property
 }
 
 Player.prototype.movePlayer = function (dt) {
@@ -461,6 +462,7 @@ Player.prototype.sendPlayerData = function() {
     return;
   }
   const playerData = {
+    name: this.name, // Include player name for identification
     position: {
       x: this.bee.position.x,
       y: this.bee.position.y,

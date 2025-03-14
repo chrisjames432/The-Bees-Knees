@@ -95,7 +95,9 @@ class SocketManager {
 
       socket.on('playerData', (data) => {
         if (this.playerList[playerName] !== undefined) {
+          // Store received data with the name that was assigned during connection
           this.playerList[playerName] = { 
+            name: playerName, // Ensure name is included
             position: data.position,
             rotation: data.rotation,
             score: data.score || 0

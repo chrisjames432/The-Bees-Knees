@@ -134,20 +134,25 @@
             var startbutton = document.getElementById('startbutton');
             var infobox = document.getElementById('infobox');
             var localplayer = document.getElementById('localplayer');
-            var pre = document.getElementById('pre');
+            // Get pre element if it exists, otherwise create it
+            var pre = document.getElementById('pre') || document.createElement('pre');
             var playername = '';
             
             textarea.innerHTML = '';
 
             game.socket.on('message', function (data) {
                 console.log(data);
-                var textNode = document.createTextNode(data.playerName); // Using data.playerName
+                var textNode = document.createTextNode(data.playerName);
                 textarea.appendChild(textNode);
-                playername = data.playerName; // Corrected to data.playerName
+                playername = data.playerName;
+                
+                // Important: Set the local player's name
+                game.localplayer.name = playername;
+                
                 localplayer.innerHTML = playername;
                 game.makeflowers(data.flowers);
                 game.maketrees(data.trees);
-                updateScore(data.score); // Update score display
+                updateScore(data.score);
             });
 
             function updateScore(score) {
