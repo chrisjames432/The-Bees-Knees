@@ -10,9 +10,6 @@
     <meta http-equiv='pragma' content='no-cache'>
     <link rel="stylesheet" href="./client/styles.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>   
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
@@ -81,9 +78,8 @@
 <script type="importmap">
   {
       "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
-          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/",
-          "threemain/": "https://cdn.jsdelivr.net/npm/three@0.164.1/"
+          "three": "/three/build/three.module.js",
+          "three/addons/": "/three/examples/jsm/"
       }
   }
 </script>
@@ -95,7 +91,7 @@
         import { checkGLBFile } from './client/js/debug.js';
         import { audioManager } from './client/js/audio.js';
         
-        $(function () {
+        document.addEventListener('DOMContentLoaded', function() {
             // Check if GLB files exist
             checkGLBFile('./client/js/glb/flower.glb', (exists, size) => {
                 console.log('Flower GLB file check:', exists ? 'Found' : 'Not found', size ? `(${size} bytes)` : '');

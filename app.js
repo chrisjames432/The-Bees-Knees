@@ -1,4 +1,5 @@
 // Dependencies
+require('dotenv').config();
 
 var bodyParser = require('body-parser');
 const http = require('http');
@@ -8,6 +9,11 @@ const app = express();
 const SocketManager = require('./SocketManager'); // Import the SocketManager class
 var sessions = require('client-sessions');
 var cors = require('cors');
+
+// Check dev flag from .env
+const isDev = process.env.dev === 'true';
+console.log(`🚀 Running in ${isDev ? 'DEVELOPMENT' : 'PRODUCTION'} mode`);
+console.log(`📁 Serving from: ${isDev ? 'client/index.html' : 'live_server/index.html'}`);
 
 //enables cors
 app.use(cors({
@@ -22,15 +28,24 @@ app.use(cors({
 var cookieParser = require('cookie-parser');
 
 app.use(bodyParser.urlencoded({ extended: true }));
-//app.use(validator());
-app.use('/client', express.static(path.join(__dirname, '/client')));
-app.use('/client/js', express.static(path.join(__dirname, '/client/js')));
-app.use('/client/js/glb', express.static(path.join(__dirname, '/client/js/glb')));
 
-// Ensure we serve audio files
-app.use('/client/audio', express.static(path.join(__dirname, '/client/audio')));
-app.use('/client/js', express.static(path.join(__dirname, '/client/js')));
-app.use('/client/js/glb', express.static(path.join(__dirname, '/client/js/glb')));
+// Conditional static file serving based on dev flag
+if (isDev) {
+    // Development mode - serve from client folder
+    app.use('/client', express.static(path.join(__dirname, '/client')));
+    app.use('/client/js', express.static(path.join(__dirname, '/client/js')));
+    app.use('/client/js/glb', express.static(path.join(__dirname, '/client/js/glb')));
+    app.use('/client/audio', express.static(path.join(__dirname, '/client/audio')));
+    // Serve three.js from node_modules for development
+    app.use('/three', express.static(path.join(__dirname, 'node_modules/three')));
+;
+} else {
+    // Production mode - serve from live_server folder + client assets
+    app.use('/client/js/glb', express.static(path.join(__dirname, '/client/js/glb')));
+    app.use('/client/audio', express.static(path.join(__dirname, '/client/audio')));
+    app.use('/client/images', express.static(path.join(__dirname, '/client/images')));
+    // In production, Three.js is bundled into the HTML file
+}
 
 app.use(sessions({
 	cookieName: 'session',
@@ -43,7 +58,11 @@ app.use(sessions({
 app.use(cookieParser());
 
 app.get('/', function (req, res) {
-	res.sendFile(__dirname + '/client/index.html');
+    if (isDev) {
+        res.sendFile(__dirname + '/client/index.html');
+    } else {
+        res.sendFile(__dirname + '/live_server/index.html');
+    }
 });
 
 // Debug route to check if server is running

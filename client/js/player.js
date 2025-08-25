@@ -1,10 +1,9 @@
 // player.js
 
-console.log('threemain/examples/jsm/loaders/GLTFLoader.js')
+console.log('GLTFLoader from three/addons/')
 import * as THREE from 'three';
-import { GLTFLoader } from 'threemain/examples/jsm/loaders/GLTFLoader.js';
-import { Tween, Easing } from 'three/addons/libs/tween.module.min.js';
-import { AnimationMixer } from 'threemain/src/animation/AnimationMixer.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Tween, Easing } from 'three/addons/libs/tween.module.js';
 import { game } from './game.js';
 import { JoyStick } from './joystick.js'; 
 import { audioManager } from './audio.js';
@@ -194,7 +193,7 @@ Player.prototype.createPlayer = function (x, z, local = false) {
     bee.scale.set(e, e, e);
     bee.position.set(x, this.initialY, z);
     this.game.scene.add(gltf.scene);
-    this.mixer = new AnimationMixer(bee);
+    this.mixer = new THREE.AnimationMixer(bee);
     this.animations = gltf.animations;
     this.bee = bee;
     this.isloaded = true;

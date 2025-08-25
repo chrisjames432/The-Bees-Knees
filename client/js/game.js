@@ -1,6 +1,6 @@
 console.log('game.js loaded')
 import * as THREE from 'three';
-import { Tween, Easing, update as TWEENUpdate } from 'three/addons/libs/tween.module.min.js';
+import { Tween, Easing, update as TWEENUpdate } from 'three/addons/libs/tween.module.js';
 import { audioManager } from './audio.js';
 
 import { Player } from './player.js';
@@ -38,7 +38,7 @@ game.init = function () {
   
   game.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
   game.renderer.setSize(window.innerWidth, window.innerHeight);
-  game.renderer.outputEncoding = THREE.sRGBEncoding;
+  game.renderer.outputColorSpace = THREE.SRGBColorSpace;
   game.renderer.setPixelRatio(window.devicePixelRatio);
   game.scene.background = new THREE.Color(0xe0e0e0);
   document.getElementById('mainscene').appendChild(game.renderer.domElement);
@@ -64,7 +64,16 @@ game.init = function () {
   
   game.localplayer.createPlayer(5, 50, true); // Ensure player is created
 
-  $('#loading_div').delay(200).fadeOut(300);
+  // Hide loading div with vanilla JS
+  const loadingDiv = document.getElementById('loading_div');
+  if (loadingDiv) {
+    setTimeout(() => {
+      loadingDiv.style.opacity = '0';
+      setTimeout(() => {
+        loadingDiv.style.display = 'none';
+      }, 300);
+    }, 200);
+  }
   setcam(game.camera, 5, 5, 5);
   game.renderscene();
 
@@ -101,7 +110,16 @@ game.init = function () {
   });
 
   game.animate();
-  $('#loading_div').delay(200).fadeOut(300);
+  // Hide loading div with vanilla JS
+  const loadingDiv2 = document.getElementById('loading_div');
+  if (loadingDiv2) {
+    setTimeout(() => {
+      loadingDiv2.style.opacity = '0';
+      setTimeout(() => {
+        loadingDiv2.style.display = 'none';
+      }, 300);
+    }, 200);
+  }
 }
 
 //-----------------------------------------------------------------------------------------------
