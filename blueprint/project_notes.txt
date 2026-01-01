@@ -1,0 +1,12 @@
+PROJECT NOTES
+============================================================
+
+Please fill out this file with information about your project:
+
+- What is the main purpose of this project?
+- What problem does it solve?
+- Any special features or functionality?
+- Technologies or APIs used?
+- Any other important context?
+
+This information will help generate a better project summary.

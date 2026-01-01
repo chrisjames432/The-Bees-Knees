@@ -1,0 +1,195 @@
+================================================================================
+PROJECT BLUEPRINT
+================================================================================
+
+MASTER PROJECT SUMMARY
+--------------------------------------------------------------------------------
+**PROJECT OVERVIEW**  
+“The Bees Knees” is a multiplayer 3D browser game where players control bees to collect flowers and avoid trees. Built with Node .js, Socket.io and Three.js, it delivers real‑time cooperative gameplay over WebSockets.
+
+**KEY FEATURES**  
+- Real‑time multiplayer with player state synced at 60 Hz.  
+- Dynamic generation of flowers and trees for each session.  
+- Bee control via on‑screen joystick or keyboard/mouse, with camera toggle and audio controls.  
+- Scoring, collision detection, particle effects, and debug visualizations.  
+
+**ARCHITECTURE**  
+- **Server (`app.js`, `SocketManager.js`, `start-server.js`)**: Express serves static assets, manages sessions, and runs a Socket.io manager that tracks players, broadcasts state, and handles flower/tree data.  
+- **Client (`client/…`)**: HTML/CSS front‑end loads a Three.js scene (`game.js`) and supporting modules (audio, player, flowers, trees, joystick, particle helper). Assets (GLB models, audio, images) reside in `client/js/glb` and `client/audio`.  
+- **Build (`build_app.js`)**: Uses esbuild to bundle the game script and inject it into a production HTML file.  
+
+**HOW IT WORKS**  
+1. Server starts, verifies required assets, and launches Express + Socket.io.  
+2. When a client connects, the server sends randomly generated flower and tree data.  
+3. The client loads models, creates the Three.js scene, and instantiates a `Player` (bee) object.  
+4. Player input (joystick/keyboard) updates movement; the client sends state updates to the server.  
+5. Server rebroadcasts the aggregated player list, enabling all clients to see each other’s bees, scores, and collected flowers.  
+
+**TECHNOLOGIES**  
+- **Backend**: Node.js, Express, Socket.io, dotenv.  
+- **Frontend**: Three.js (WebGL), ES6 modules, esbuild for bundling.  
+- **Assets**: GLTF/GLB 3D models, MP3 audio, PNG textures.  
+- **Development tools**: npm scripts, package‑lock, .env for credentials.
+
+
+================================================================================
+FILE TREE STRUCTURE
+================================================================================
+
+The-Bees-Knees/
+ client/
+    audio/
+       bump.mp3
+       nature_ambient.mp3
+    images/
+       particle.png
+       placeholder.js
+    js/
+       glb/
+          beemodle.glb
+          flower.glb
+          newtrees.glb
+          PineTrees.glb
+       audio.js
+       debug.js
+       flowers.js
+       game.js
+       joystick.js
+       particleHelper.js
+       player.js
+       trees.js
+    .env
+    index.html
+    styles.css
+ live_server/
+    bees-knees.html
+    index.html
+ project_goals/
+    changelog.txt
+    goal.txt
+    goals.txt
+    The Bee's Knees.txt
+ .env
+ .gitignore
+ app.js
+ build_app.js
+ info.txt
+ package-lock.json
+ package.json
+ plandoc.md
+ README.md
+ SocketManager.js
+ start-server.js
+
+
+================================================================================
+FILE DESCRIPTIONS
+================================================================================
+
+.env
+  Description: Environment configuration file containing API keys and sensitive credentials.
+
+.gitignore
+  Description: The `.gitignore` file instructs Git to exclude the `node_modules` directory from version control, preventing its files from being tracked or committed.
+
+README.md
+  Description: The README describes BeeGame, a multiplayer 3D bee‑control game built with Node.js, Socket.io, and Three.js, and provides brief setup instructions (install dependencies and run `node app.js`). It also lists planned features and donation options.
+
+SocketManager.js
+  Description: The file defines a SocketManager class that initializes socket.io connections, broadcasts the current player list at 60 Hz, and on each client connection sends randomly generated flower and tree data while handling player updates, disconnects, and flower‑collection events. It also tracks players and maintains the shared flower/tree arrays.
+
+app.js
+  Description: The script configures an Express web server that serves static client assets (different paths for development vs. production), handles sessions, provides status and file‑checking endpoints, and launches a Socket.io server managed by a custom SocketManager for real‑time communication.
+
+build_app.js
+  Description: The script bundles `client/js/game.js` (and optional CSS) with esbuild, injects the resulting JavaScript and an initialization snippet into a cleaned‑up HTML template, writes the final page to `live_server/index.html`, and then deletes the temporary build files.
+
+client\.env
+  Description: Environment configuration file containing API keys and sensitive credentials.
+
+client\audio\bump.mp3
+  Description: Media file (video or audio).
+
+client\audio\nature_ambient.mp3
+  Description: Media file (video or audio).
+
+client\images\particle.png
+  Description: Image file.
+
+client\images\placeholder.js
+  Description: The file is an empty placeholder JavaScript module—currently it contains no code and likely serves as a stub for future image‑related functionality.
+
+client\index.html
+  Description: This HTML file serves as the entry page for the “The Bees Knees” multiplayer game, loading styles, assets, and a Socket.IO connection, then initializing the Three.js‑based game, displaying UI elements (score, connection status, start screen) and providing controls for camera toggling and audio.
+
+client\js\audio.js
+  Description: The file defines an AudioManager class that loads, configures, and controls game audio—playing looping background music, handling one‑off sound effects, adjusting volume, and toggling mute—and exports a ready‑to‑use audioManager instance.
+
+client\js\debug.js
+  Description: This file defines two debugging helpers: `logModelStructure` prints a hierarchical overview of a 3D model’s type, children, material, and geometry, and `checkGLBFile` attempts to fetch a GLB file, logs its existence and size, and reports success or failure via a callback.
+
+client\js\flowers.js
+  Description: This module loads a GLTF flower model, clones it for each entry in the provided `flowersData`, applies each flower’s color, position, rotation and a fixed scale, and adds the resulting objects to the game’s Three‑JS scene (tracking them in `game.flowers`). It also logs loading progress and handles errors.
+
+client\js\game.js
+  Description: The game.js module initializes the Three.js scene, renderer, camera, lights, and player objects, then runs the main animation loop while handling networking (socket events), flower/tree creation, audio controls, and a debug mode for visualizing collisions.
+
+client\js\glb\PineTrees.glb
+  Description: I’m unable to see the file’s contents, so I can’t summarize its function. Please attach or paste the file content, and I’ll provide a brief summary.
+
+client\js\glb\beemodle.glb
+  Description: The file’s contents weren’t provided, so its purpose can’t be determined. If you share the file or its text, I can summarize its function.
+
+client\js\glb\flower.glb
+  Description: I don’t have the file’s contents, so I can’t summarize its function. If you share the text or describe the file, I’ll provide a brief summary.
+
+client\js\glb\newtrees.glb
+  Description: I’m sorry—I can’t see any file or its contents, so I’m unable to summarize what it does.
+
+client\js\joystick.js
+  Description: This file defines a JoyStick class that renders a circular on‑screen joystick, tracks mouse or touch movements within a configurable radius, computes normalized forward and turn values, and invokes a supplied onMove callback (or game method) with those values.
+
+client\js\particleHelper.js
+  Description: The file defines a `createParticleTexture` function that generates a tiny canvas with a radial white‑to‑transparent gradient and returns it as a `THREE.CanvasTexture` for use in particle effects.
+
+client\js\player.js
+  Description: This file defines a `Player` class for a Three.js‑based game: it loads the bee model, manages player movement, camera views, collision handling (flowers, trees), scoring, animations, and communicates player state via sockets. It also includes helper functions for camera control, particle effects, and input handling.
+
+client\js\trees.js
+  Description: The file loads GLTF tree models, picks random variations, positions and scales them according to supplied data, generates detailed collision shapes for each tree, and adds the trees to the game’s Three‑JS scene (with a fallback to an older model if loading fails).
+
+client\styles.css
+  Description: This CSS file styles the web client’s interface—defining full‑screen layout, a loading spinner, overlay screens, custom fonts, and the appearance/positioning of buttons (start, camera, audio) and other UI elements.
+
+info.txt
+  Description: The file holds basic metadata for the “The‑Bees‑Knees” repository, listing its name, a placeholder description, and the creation date (2024‑08‑22).
+
+live_server\bees-knees.html
+  Description: [Could not generate summary]
+
+live_server\index.html
+  Description: [Could not generate summary]
+
+package-lock.json
+  Description: Dependency lock file - ensures consistent package versions.
+
+package.json
+  Description: This `package.json` defines the Node.js project “cryptommo‑master,” specifying its entry point, start/dev/build scripts, and the list of runtime and development dependencies required to run the application.
+
+plandoc.md
+  Description: The file is a concise development roadmap and technical plan for “The Bee’s Knees,” a cooperative multiplayer bee‑colony game built with Node.js, Express, Socket.io, and Three.js, outlining the current working features, MVP vision, phased feature implementation, and success metrics.
+
+project_goals\The Bee's Knees.txt
+  Description: The file outlines the goals for creating a Three.js “bee” game, noting that a Node.js server and multiplayer client blueprint already exist. It lists remaining tasks—adding scoring, maps, level design—and requests help with game mechanics and concepts.
+
+project_goals\changelog.txt
+  Description: The file is a changelog that records a “Shuffle_UPDATE” entry dated June 23 2024 (repeated four times).
+
+project_goals\goal.txt
+  Description: The file is a simple log that records an update dated June 23 2024, with that entry repeated several times.
+
+project_goals\goals.txt
+  Description: The file is a placeholder that simply notes it was newly created (“UPDATE – File created”), likely intended to hold project goal information later.
+
+start-server.js
+  Description: This script verifies that needed client directories, model files, and audio assets exist (creating empty placeholders for missing audio), reports any missing files, and then launches the main server by running `app.js`.
